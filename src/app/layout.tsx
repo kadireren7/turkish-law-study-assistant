@@ -5,8 +5,9 @@ import { Sidebar } from '@/components/Sidebar'
 export const metadata: Metadata = {
   title: 'Hukuk Çalışma Asistanı',
   description: 'Türk hukuku öğrencileri için ders ve sınav çalışma asistanı. Sohbet, madde arama, olay analizi, sınav pratiği.',
-  viewport: { width: 'device-width', initialScale: 1, maximumScale: 5 },
 }
+
+export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 5 }
 
 export default function RootLayout({
   children,

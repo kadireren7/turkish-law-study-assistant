@@ -147,7 +147,9 @@ function getImageFromHtml(html: unknown): string | null {
 function getUrlFromMediaObj(media: unknown): string | null {
   if (media == null || typeof media !== 'object') return null
   const o = media as Record<string, unknown>
-  const url = o.url ?? o['$']?.['url'] ?? (Array.isArray(o) ? o[0] : null)
+  const dollar = o['$']
+  const urlFromDollar = dollar != null && typeof dollar === 'object' && 'url' in dollar ? (dollar as Record<string, unknown>).url : undefined
+  const url = o.url ?? urlFromDollar ?? (Array.isArray(o) ? o[0] : null)
   if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) return url.trim()
   if (typeof url === 'object' && url !== null && typeof (url as { url?: string }).url === 'string')
     return (url as { url: string }).url.trim()
