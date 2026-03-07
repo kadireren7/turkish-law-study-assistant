@@ -1,0 +1,6 @@
+[
+  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "1", "title": "Amaç ve kapsam", "text": "Bu Kanun, hukuk mahkemelerinde görülen davalarda uygulanacak usul kurallarını düzenler.", "keywords": ["hukuk muhakemesi", "dava", "usul"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
+  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "24", "title": "Davacı ve davalı", "text": "Dava, davacı tarafından davalı aleyhine açılır. Taraflar, iddia ve savunmalarını usulüne uygun şekilde ileri sürer.", "keywords": ["davacı", "davalı", "dava"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
+  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "189", "title": "İspat yükü", "text": "İspat yükü, iddia eden tarafa aittir. Kanunda özel düzenleme varsa ispat yükü değişebilir.", "keywords": ["ispat yükü", "iddia", "delil"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
+  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "293", "title": "Karar", "text": "Hâkim, toplanan delillere ve yargılamanın sonucuna göre hüküm kurar. Hüküm, gerekçeli yazılır.", "keywords": ["hüküm", "gerekçe", "karar"], "legalArea": "Hukuk Muhakemeleri Hukuku"}
+]

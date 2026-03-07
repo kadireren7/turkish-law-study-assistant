@@ -1,0 +1,28 @@
+---
+source: "Yargıtay / AYM karar veritabanları (update-legal-data script)"
+date: "2026-03-07"
+last_checked: "2026-03-07"
+legal_area: "Genel"
+confidence: "medium"
+---
+
+# Son Önemli Kararlar (Yakın Dönem İçtihat)
+
+Bu dosya, manuel eklenen veya script ile güncellenen karar özetlerini içerir. Resmî ve güncel metin için aşağıdaki karar arama kaynakları kullanılmalıdır.
+
+## Resmî kaynak önceliği (kararlar)
+
+- **UYAP Emsal Karar Arama** (öncelik 3, güncelleme: daily) – Ulusal Yargı Ağı Projesi (UYAP) üzerinden emsal karar arama. İçtihat taraması için kullanılır.
+- **Yargıtay Karar Arama** (öncelik 4, güncelleme: daily) – Yargıtay kararları bilgi bankası. İstinaf ve temyiz kararları için resmî kaynak.
+- **Anayasa Mahkemesi Kararlar Bilgi Bankası** (öncelik 5, güncelleme: daily) – AYM kararları ve iptal / itiraz sonuçları. Anayasa uyumluluk ve temel hak içtihatı.
+
+---
+
+### Yargıtay Hukuk Genel Kurulu – 2023/123 – 2024-05-15
+- **Konu:** Sebepsiz zenginleşme – illiyet bağı
+- **Özet / Sonuç:** Özet: Zenginleşme ile fakirleşme arasında illiyet bağı kurulmalıdır.
+- **Kaynak:** Yargıtay karar veritabanı
+
+---
+
+*Güncel kararlar ilgili mahkeme sitelerinden kontrol edilmelidir.*

@@ -1,0 +1,7 @@
+[
+  {"lawCode": "TTK", "lawName": "Türk Ticaret Kanunu", "articleNumber": "11", "title": "Tacir", "text": "Ticari bir işletmeyi kısmen dahi olsa kendi adına işleten kimseye tacir denir.", "keywords": ["tacir", "ticari işletme"], "legalArea": "Ticaret Hukuku"},
+  {"lawCode": "TTK", "lawName": "Türk Ticaret Kanunu", "articleNumber": "12", "title": "Ticari işletme", "text": "Ticari işletme, esnaf işletmesi için öngörülen sınırı aşan faaliyetlerin devamlı ve bağımsız şekilde yürütüldüğü işletmedir.", "keywords": ["ticari işletme", "esnaf sınırı", "devamlı faaliyet"], "legalArea": "Ticaret Hukuku"},
+  {"lawCode": "TTK", "lawName": "Türk Ticaret Kanunu", "articleNumber": "18", "title": "Ticari iş", "text": "Ticari işletmeyi ilgilendiren işler ticari iştir. Tacirin fiil ve işlemleri ticari iş sayılır.", "keywords": ["ticari iş", "tacir"], "legalArea": "Ticaret Hukuku"},
+  {"lawCode": "TTK", "lawName": "Türk Ticaret Kanunu", "articleNumber": "19", "title": "Ticari hüküm", "text": "Taraflardan en az biri için ticari iş niteliğinde olan uyuşmazlıklarda ticari hükümler uygulanır.", "keywords": ["ticari hüküm", "ticari iş", "uyuşmazlık"], "legalArea": "Ticaret Hukuku"},
+  {"lawCode": "TTK", "lawName": "Türk Ticaret Kanunu", "articleNumber": "20", "title": "Ticari örf ve âdet", "text": "Kanun ve kanunun yürürlükteki ticari hükümlerinde hüküm yoksa, ticari örf ve âdete, bu da yoksa genel hukuk hükümlerine göre karar verilir.", "keywords": ["ticari örf adet", "kanun boşluğu"], "legalArea": "Ticaret Hukuku"}
+]

@@ -1,0 +1,164 @@
+{
+  "lastRun": "2026-03-07T03:43:48.823Z",
+  "previousSnapshot": {
+    "law-data/mevzuat/anayasa.md": {
+      "hash": "def8c06601f6771a045ba06b57ac6d3a8169c76ed113c05519f769512fdb5379",
+      "lastModified": "2026-03-07T03:26:02.886Z",
+      "articleNumbers": [
+        "1",
+        "2",
+        "4",
+        "10",
+        "13",
+        "35",
+        "36"
+      ]
+    },
+    "law-data/mevzuat/tck.md": {
+      "hash": "36a3cd46ed22e9f4be1f06b87a4ab0d962b4020062f1b43b193b1b13146dde02",
+      "lastModified": "2026-03-07T03:26:16.406Z",
+      "articleNumbers": [
+        "1",
+        "20",
+        "21",
+        "22",
+        "26",
+        "38"
+      ]
+    },
+    "law-data/mevzuat/tmk.md": {
+      "hash": "a9041f6d4000bff16afd369ada281b0db7bc237b2caa39d4774fb949939b1bce",
+      "lastModified": "2026-03-07T03:26:35.603Z",
+      "articleNumbers": [
+        "1",
+        "2",
+        "8",
+        "9"
+      ]
+    },
+    "law-data/mevzuat/tbk.md": {
+      "hash": "6257789f1fcf06638a8250a1731ca1afcb0288a4f418b9cd3187b51479dd6649",
+      "lastModified": "2026-03-07T03:26:42.414Z",
+      "articleNumbers": [
+        "1",
+        "5",
+        "77",
+        "420"
+      ]
+    },
+    "law-data/mevzuat/idare.md": {
+      "hash": "9492de0c3431eb5c218d4834e8e08a47ef4f22de79815a64e57372b4604377b0",
+      "lastModified": "2026-03-07T03:26:54.404Z",
+      "articleNumbers": []
+    }
+  },
+  "runs": [
+    {
+      "at": "2026-03-07T03:39:02.457Z",
+      "amendmentsDetected": [
+        {
+          "file": "law-data/mevzuat/anayasa.md",
+          "lawName": "Türkiye Cumhuriyeti Anayasası (2709)",
+          "type": "changed",
+          "articlesPossiblyChanged": [
+            "1",
+            "2",
+            "4",
+            "10",
+            "13",
+            "35",
+            "36"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tck.md",
+          "lawName": "Türk Ceza Kanunu (5237)",
+          "type": "changed",
+          "articlesPossiblyChanged": [
+            "1",
+            "20",
+            "21",
+            "22",
+            "26",
+            "38"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tmk.md",
+          "lawName": "Türk Medeni Kanunu (4721)",
+          "type": "changed",
+          "articlesPossiblyChanged": [
+            "1",
+            "2",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tbk.md",
+          "lawName": "Türk Borçlar Kanunu (6098)",
+          "type": "changed",
+          "articlesPossiblyChanged": [
+            "1",
+            "5",
+            "77",
+            "420"
+          ]
+        }
+      ],
+      "decisionsAdded": 1,
+      "filesChanged": [
+        "law-data/mevzuat/anayasa.md",
+        "law-data/mevzuat/tck.md",
+        "law-data/mevzuat/tmk.md",
+        "law-data/mevzuat/tbk.md",
+        "law-data/mevzuat/idare.md"
+      ],
+      "inputAmendments": 1,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-07T03:39:15.180Z",
+      "amendmentsDetected": [],
+      "decisionsAdded": 1,
+      "filesChanged": [],
+      "inputAmendments": 1,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-07T03:41:03.863Z",
+      "amendmentsDetected": [],
+      "decisionsAdded": 1,
+      "filesChanged": [],
+      "inputAmendments": 1,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-07T03:43:35.669Z",
+      "schedule": "daily",
+      "amendmentsDetected": [],
+      "decisionsAdded": 0,
+      "filesChanged": [],
+      "inputAmendments": 1,
+      "inputDecisions": 0
+    },
+    {
+      "at": "2026-03-07T03:43:42.179Z",
+      "schedule": "weekly",
+      "amendmentsDetected": [],
+      "decisionsAdded": 1,
+      "filesChanged": [],
+      "inputAmendments": 0,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-07T03:43:48.823Z",
+      "schedule": "full",
+      "amendmentsDetected": [],
+      "decisionsAdded": 1,
+      "filesChanged": [],
+      "inputAmendments": 1,
+      "inputDecisions": 1
+    }
+  ]
+}

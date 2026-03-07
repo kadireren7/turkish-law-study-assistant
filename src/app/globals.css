@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #e2e8f0;
+  --accent: #0f766e;
+}
+
+html {
+  overflow-x: hidden;
+}
+body {
+  color: var(--foreground);
+  background: var(--background);
+  overflow-x: hidden;
+}
+
+/* Prose-style for AI responses */
+.prose-law h3 {
+  @apply mt-4 mb-2 font-semibold text-primary-800;
+}
+.prose-law p {
+  @apply my-2 text-slate-700 leading-relaxed;
+}
+.prose-law ul {
+  @apply list-disc list-inside my-2 space-y-1;
+}
+.prose-law strong {
+  @apply text-primary-800;
+}

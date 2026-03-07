@@ -1,0 +1,40 @@
+{
+  "name": "law-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "legal:update": "tsx scripts/update-legal-data.ts",
+    "legal:update:daily": "tsx scripts/update-legal-data.ts --schedule=daily",
+    "legal:update:weekly": "tsx scripts/update-legal-data.ts --schedule=weekly",
+    "update-legal": "npm run legal:update",
+    "news:update": "tsx scripts/update-news.ts --mode=all",
+    "news:update:law": "tsx scripts/update-news.ts --mode=law",
+    "news:update:politics": "tsx scripts/update-news.ts --mode=politics"
+  },
+  "dependencies": {
+    "next": "^16.1.6",
+    "rss-parser": "^3.13.0",
+    "openai": "^4.52.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}

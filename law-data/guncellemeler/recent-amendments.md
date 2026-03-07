@@ -1,0 +1,31 @@
+---
+source: "Resmî Gazete / Mevzuat takip (update-legal-data script)"
+date: "2026-03-07"
+last_checked: "2026-03-07"
+legal_area: "Genel"
+confidence: "medium"
+---
+
+# Son Değişiklikler (Yakın Dönem Kanun Değişiklikleri)
+
+Bu dosya, yerel mevzuat dosyalarındaki değişiklikler ve manuel eklenen Resmî Gazete özetleriyle güncellenir. Resmî ve güncel metin için aşağıdaki kaynaklar kullanılmalıdır.
+
+## Resmî kaynak önceliği (kanun değişiklikleri)
+
+- **Resmî Gazete** (öncelik 1, güncelleme: daily) – Kanun, KHK ve yönetmeliklerin yürürlüğe girdiği resmî yayın. Değişiklik tarihleri ve metinler burada yayımlanır.
+- **Resmî mevzuat (kanunlar)** (öncelik 2, güncelleme: weekly) – TBMM ve Cumhurbaşkanlığı mevzuat metinleri. Güncel kanun metinleri için mevzuat portalları kullanılır.
+
+---
+
+## Yerel mevzuat dosyası değişiklikleri
+
+## Resmî Gazete / manuel eklenen değişiklikler
+
+### Örnek: Türk Borçlar Kanunu (6098 sayılı) – değişiklik örneği
+- **Değişen maddeler:** (örnek) 77, 78
+- **Özet:** Bu bölüm, güncelleme scripti veya manuel eklenen Resmî Gazete özetleriyle doldurulur. Sebepsiz zenginleşme gibi maddelerde yapılan değişiklikler buraya eklenebilir.
+- **Kaynak:** Resmî Gazete ve mevzuat portalları kontrol edilmelidir.
+
+---
+
+*Güncel metin için Resmî Gazete kontrol edilmelidir.*
