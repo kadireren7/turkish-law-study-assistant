@@ -3,67 +3,116 @@ source: "Resmî Gazete (6098 sayılı Kanun)"
 date: "2011-02-11"
 last_checked: "2024-06-01"
 legal_area: "Borçlar Hukuku"
-keywords: "TBK borç sözleşme sebepsiz zenginleşme haksız fiil ifa"
+keywords: "TBK borç sözleşme sebepsiz zenginleşme haksız fiil ifa icap kabul temerrüt"
 confidence: "high"
 ---
 
 # Türk Borçlar Kanunu (6098 sayılı)
 
-Resmî güncel metin için Resmî Gazete ve mevzuat portallarına başvurunuz.
+**Kanun adı:** Türk Borçlar Kanunu (6098 sayılı)  
+**Hukuk alanı:** Borçlar Hukuku  
+**Özet:** Borç ilişkisinin kaynakları (sözleşme, haksız fiil, sebepsiz zenginleşme), sözleşmenin kurulması, ifa, temerrüt. Güncel metin için mevzuat.gov.tr ve resmigazete.gov.tr kontrol edilmelidir.
 
 ---
 
-## Genel Bilgi
+## Madde 1 – Borç ilişkisinin kaynakları
 
-- **Kanun adı:** Türk Borçlar Kanunu (6098 sayılı)
-- **Kısa açıklama:** Borç ilişkisinin kaynakları (sözleşme, haksız fiil, sebepsiz zenginleşme), sözleşmenin kurulması, ifa, temerrüt.
-- **Hukuk alanı:** Borçlar Hukuku
-- **Öğrenci için neden önemli:** Borç kaynakları (m. 1), sözleşme kurulması (m. 5), sebepsiz zenginleşme (m. 77) ve haksız fiil sınavda çok sorulur.
+**Madde metni:** Borç ilişkisi, kanun veya sözleşmeden doğar. Haksız fiil ve sebepsiz zenginleşme de borç doğuran diğer kaynaklardandır.
 
----
-
-## KANUN MADDELERİ
-
-### Madde 1 – Borç ilişkisinin kaynakları
-Borç ilişkisi, kanun veya sözleşmeden doğar. Haksız fiil ve sebepsiz zenginleşme de borç doğuran diğer kaynaklardandır.
-
-### Madde 5 – Sözleşmenin kurulması
-Sözleşme, tarafların karşılıklı ve birbirine uygun irade açıklamalarıyla kurulur. Kanunda öngörülen hallerde şekil şartı aranır.
-
-### Madde 77 – Sebepsiz zenginleşme
-Haklı bir sebep olmaksızın, bir başkasının malvarlığından veya emeğinden zenginleşen, bu zenginleşmeyi geri vermekle yükümlüdür. Bu yükümlülük, özellikle zenginleşmenin geçerli olmayan veya gerçekleşmemiş ya da sona ermiş bir sebebe dayanması durumunda doğmuş olur.
-
-### Madde 49 – Haksız fiil
-Kusurlu ve hukuka aykırı bir fiille başkasına bir zarar veren kişi, bu zararı gidermekle yükümlüdür. Zarar veren, kusurun bulunmadığını ispat etmedikçe, tazminatla yükümlü olur.
-
-### Madde 420 – Sözleşmeden doğan borçlar
-Sözleşme, tarafları karşılıklı borç altına sokar. Edim, ifa, ifa engelleri ve sonuçları kanunda düzenlenir.
+**Anahtar kelimeler:** borç ilişkisi, sözleşme, haksız fiil, sebepsiz zenginleşme, kanun  
+**Hukuk alanı:** Borçlar Hukuku
 
 ---
 
-## TANIMLAR
+## Madde 5 – Sözleşmenin kurulması
 
-- **Borç ilişkisi:** Alacaklının borçludan bir edim (ifa) isteme hakkı; borçlunun da bu edimi yerine getirme yükümlülüğü. Kaynakları: sözleşme, kanun, haksız fiil, sebepsiz zenginleşme (TBK m. 1).
-- **Sebepsiz zenginleşme:** Haklı bir sebep olmaksızın bir kişinin malvarlığında, başkasının malvarlığı veya emeğiyle artış olması; zenginleşenin iade yükümlülüğü (TBK m. 77).
-- **Unsurlar (sebepsiz zenginleşme):** (1) Zenginleşme, (2) Başkasının malvarlığında azalma veya emeği (fakirleşme), (3) İlliyet bağı, (4) Haklı sebep yokluğu.
-- **Sözleşme:** Karşılıklı ve birbirine uygun irade açıklamalarıyla kurulan hukuki işlem (TBK m. 5). Genel kural olarak şekle tabi değildir; kanunda öngörülen hallerde şekil gerekir.
+**Madde metni:** Sözleşme, tarafların karşılıklı ve birbirine uygun irade açıklamalarıyla kurulur. Kanunda öngörülen hallerde şekil şartı aranır. Sözleşmenin kurulmasında icap ve kabulün bir arada bulunması gerekir.
 
----
-
-## AÇIKLAMALAR
-
-- TBK m. 77: Sebepsiz zenginleşmede kusur aranmaz; zenginleşme, fakirleşme ve illiyet bağı yeterlidir. Geçersiz, gerçekleşmemiş veya sona ermiş bir sebebe dayanan zenginleşme (örn. geçersiz sözleşmeyle yapılan ödeme) iade edilir.
-- Sözleşme (m. 5): İrade + irade açıklaması uyumu gerekir; hata, hile, ikrah gibi irade sakatlıkları sözleşmenin geçerliliğini etkiler.
-- Eski 818 sayılı BK'da sebepsiz zenginleşme 609. maddede düzenleniyordu; 6098 sayılı TBK'da 77 ve izleyen maddelerdedir.
+**Anahtar kelimeler:** sözleşme, icap, kabul, irade açıklaması, şekil  
+**Hukuk alanı:** Borçlar Hukuku
 
 ---
 
-## ÖRNEKLER
+## Madde 26 – İcap
 
-- **Sebepsiz zenginleşme (m. 77):** A, B'ye yanlışlıkla 10.000 TL öder. Haklı sebep yoktur; B zenginleşmiş, A fakirleşmiştir. A, iade (sebepsiz zenginleşme davası) talep edebilir.
-- **Geçersiz sebep:** Ödeme bir sözleşmeye dayanıyorsa ve sözleşme sonradan iptal edilirse, yapılan ödeme sebepsiz zenginleşme oluşturur; iade istenebilir.
-- **Sözleşme (m. 5):** A ile B satış konusunda anlaşır; karşılıklı irade açıklamaları uyumludur. Sözleşme kurulmuştur (genel kural olarak yazı şartı yoktur).
+**Madde metni:** Sözleşmenin kurulmasına yönelik irade açıklaması, icap niteliğindedir. İcap, icapçıya ulaştığı anda onun tarafından öğrenilmiş olur ve o andan itibaren icapçıyı bağlar; ancak icaptan dönme, kabul açıklaması icapçıya ulaşmadan veya ona kadar ulaşmış olmakla birlikte icapçı kabulden haberdar olmadan icapçıya ulaşırsa geçerlidir.
+
+**Anahtar kelimeler:** icap, irade açıklaması, bağlayıcılık, dönme  
+**Hukuk alanı:** Borçlar Hukuku
 
 ---
 
-*Güncel metin için Resmî Gazete kontrol edilmelidir.*
+## Madde 27 – Kabul
+
+**Madde metni:** İcaba verilen ve icabın içeriğiyle uyumlu olan cevap, kabul niteliğindedir. İcap ile kabulün bir araya gelmesiyle sözleşme kurulmuş olur.
+
+**Anahtar kelimeler:** kabul, icap, uygunluk, sözleşme kurulması  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 49 – Haksız fiil
+
+**Madde metni:** Kusurlu ve hukuka aykırı bir fiille başkasına bir zarar veren kişi, bu zararı gidermekle yükümlüdür. Zarar veren, kusurun bulunmadığını ispat etmedikçe, tazminatla yükümlü olur. Tazminat, zarar görenin uğradığı zararı gidermek ve ayrıca fiilin hukuka aykırılığını haklı kılacak bir sebep bulunmadıkça manevi tazminat ödemek suretiyle ödenir.
+
+**Anahtar kelimeler:** haksız fiil, kusur, hukuka aykırılık, zarar, tazminat  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 77 – Sebepsiz zenginleşme
+
+**Madde metni:** Haklı bir sebep olmaksızın, bir başkasının malvarlığından veya emeğinden zenginleşen, bu zenginleşmeyi geri vermekle yükümlüdür. Bu yükümlülük, özellikle zenginleşmenin geçerli olmayan veya gerçekleşmemiş ya da sona ermiş bir sebebe dayanması durumunda doğmuş olur.
+
+**Anahtar kelimeler:** sebepsiz zenginleşme, iade, malvarlığı, haklı sebep  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 78 – Sebepsiz zenginleşmede illiyet
+
+**Madde metni:** Zenginleşme ile fakirleşme arasında illiyet bağı bulunmalıdır. Zenginleşen, ancak zenginleştiği ölçüde ve zenginleşmenin mevcut olduğu sürece geri vermekle yükümlüdür.
+
+**Anahtar kelimeler:** sebepsiz zenginleşme, illiyet bağı, zenginleşme fakirleşme  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 117 – İfa
+
+**Madde metni:** Borçlu, edimi borçlanılan şekilde ve zamanda ifa etmekle yükümlüdür. İfa, borcun konusuna uygun olarak tam ve eksiksiz yerine getirilmelidir.
+
+**Anahtar kelimeler:** ifa, edim, borçlu, tam ifa  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 122 – Temerrüt
+
+**Madde metni:** Borçlu, kendisine düşen edimi zamanında ve uygun biçimde yerine getirmezse temerrüde düşmüş olur. Alacaklı, borçlunun temerrüdünü usulüne uygun olarak ihtar etmiş olmalıdır; kanunda öngörülen hallerde ihtar gerekmez.
+
+**Anahtar kelimeler:** temerrüt, ihtar, edim, borçlu  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Madde 420 – Sözleşmeden doğan borçlar
+
+**Madde metni:** Sözleşme, tarafları karşılıklı borç altına sokar. Taraflar, sözleşmeden doğan borçlarını dürüstlük kurallarına uygun biçimde ifa etmekle yükümlüdür. Edim, ifa, ifa engelleri ve sonuçları kanunda düzenlenir.
+
+**Anahtar kelimeler:** sözleşme, borç, edim, ifa, dürüstlük  
+**Hukuk alanı:** Borçlar Hukuku
+
+---
+
+## Tanımlar ve kısa açıklamalar
+
+- **Borç ilişkisi:** Alacaklının borçludan bir edim isteme hakkı; borçlunun ifa yükümlülüğü. Kaynakları: sözleşme, kanun, haksız fiil, sebepsiz zenginleşme (m. 1).
+- **Sebepsiz zenginleşme:** Haklı sebep olmaksızın malvarlığında artış; zenginleşenin iade yükümlülüğü. Unsurlar: zenginleşme, fakirleşme, illiyet, haklı sebep yokluğu (m. 77, 78).
+- **Haksız fiil:** Kusurlu ve hukuka aykırı fiille zarar verme; tazminat yükümlülüğü (m. 49).
+- **İcap ve kabul:** Sözleşmenin kurulması için karşılıklı uygun irade açıklamaları (m. 5, 26, 27).
+- **Temerrüt:** Borçlunun edimi zamanında ve uygun biçimde yerine getirmemesi; genelde ihtar gerekir (m. 122).
+
+---
+
+*Güncel metin için mevzuat.gov.tr ve resmigazete.gov.tr kontrol edilmelidir.*

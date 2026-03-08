@@ -168,14 +168,39 @@ async function saveUpdateLog(log: UpdateLog): Promise<void> {
 }
 
 async function loadInputAmendments(): Promise<InputAmendment[]> {
-  const p = path.join(INPUT_DIR, 'amendments.json')
-  try {
-    const raw = await fs.readFile(p, 'utf-8')
-    const data = JSON.parse(raw)
-    return Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : []
-  } catch {
-    return []
+  const manualPath = path.join(INPUT_DIR, 'amendments.json')
+  const rssPath = path.join(INPUT_DIR, 'amendments-from-rss.json')
+
+  const loadJson = async (p: string): Promise<InputAmendment[]> => {
+    try {
+      const raw = await fs.readFile(p, 'utf-8')
+      const data = JSON.parse(raw)
+      return Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : []
+    } catch {
+      return []
+    }
   }
+
+  const manual = await loadJson(manualPath)
+  let rss: InputAmendment[] = []
+  try {
+    const rssRaw = await fs.readFile(rssPath, 'utf-8')
+    const rssData = JSON.parse(rssRaw)
+    rss = Array.isArray(rssData) ? rssData : []
+  } catch {
+    // amendments-from-rss.json yoksa veya geçersizse atla (npm run amendments:fetch ile oluşturulur)
+  }
+
+  // Manuel kayıtlar önce; RSS kayıtları sonra. Aynı gün+başlık tekrarları atlanır.
+  const seen = new Set<string>()
+  const out: InputAmendment[] = []
+  for (const a of [...manual, ...rss]) {
+    const key = `${a.date || ''}|${(a.lawName || '').slice(0, 100)}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(a)
+  }
+  return out
 }
 
 async function loadInputDecisions(): Promise<InputDecision[]> {

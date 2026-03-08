@@ -1,58 +1,30 @@
 ---
-source: "Resmî Gazete (6100 sayılı Kanun)"
-date: "2011-02-14"
-last_checked: "2024-06-01"
+source: "Mevzuat Bilgi Sistemi (mevzuat.gov.tr) - otomatik cekim"
+date: "2026-03-07"
+last_checked: "2026-03-07"
 legal_area: "Hukuk Muhakemeleri Hukuku"
-keywords: "HMK hukuk muhakemesi dava davacı davalı delil ispat yargılama"
+keywords: "hukuk muhakemeleri hukuku mevzuat kanun madde"
 confidence: "high"
 ---
 
-# Hukuk Muhakemeleri Kanunu (6100 sayılı)
+# Hukuk Muhakemeleri Kanunu (6100 sayili)
 
-Resmî güncel metin için Resmî Gazete ve mevzuat portallarına başvurunuz.
-
----
-
-## Genel Bilgi
-
-- **Kanun adı:** Hukuk Muhakemeleri Kanunu (6100 sayılı)
-- **Kısa açıklama:** Hukuk mahkemelerinde görülen davalarda uygulanacak usul; dava açma, taraflar, deliller, ispat yükü, hüküm.
-- **Hukuk alanı:** Hukuk Muhakemeleri Hukuku
-- **Öğrenci için neden önemli:** Davacı-davalı, ispat yükü (m. 189), süreler, delil türleri sınavda sık sorulur.
+**Kanun adi:** Hukuk Muhakemeleri Kanunu (6100 sayili)
+**Hukuk alani:** Hukuk Muhakemeleri Hukuku
+**Guncel metin:** mevzuat.gov.tr uzerinden otomatik cekilmistir. Resmi teyit icin https://www.mevzuat.gov.tr/ kontrol ediniz.
 
 ---
 
-## KANUN MADDELERİ
+## Madde 1
 
-### Madde 1 – Amaç ve kapsam
-Bu Kanun, hukuk mahkemelerinde görülen davalarda uygulanacak usul kurallarını düzenler.
+**Madde metni:**
+Mevzuat Bilgi Sistemi T.C. CUMHURBAŞKANLIĞI MEVZUAT BİLGİ SİSTEMİ Mevzuat Türü Kanunlar Kanun Hükmünde Kararnameler Cumhurbaşkanlığı Kararnameleri Tüzükler Cumhurbaşkanı Kararları Cumhurbaşkanlığı Genelgeleri Yönetmelikler Tebliğler T.C. Anayasası Mülga Mevzuat Kanunlar Fihristi Cumhurbaşkanlığı Kararnameleri Fihristi Yayınlar CUMHURBA&#x15E;KANLI&#x11E;I KARARNAMELER&#x130; K&#xDC;LL&#x130;YATI 205 KANUN TAHK&#x130;M K&#x130;TABI TAHK&#x130;MDE GU&#x308;NCEL SORUNLAR V-VI TAHK&#x130;MDE G&#xDC;NCEL GEL&#x130;&#x15E;MELER SEM&#x130;NER K&#x130;TABI T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-I T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-II TAHK&#x130;M SEMPOZYUM K&#x130;TABI Oturum Aç Favorilerim Üye Bilgileri Üye Bilgileri Çıkış MEVZUAT BİLGİ SİSTEMİ Şifre Değiştirme &times; Güncelle Üyelik Bilgileri &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z Mesle&#x11F;iniz Güncelle Anasayfa Resmî Gazete Tarihi: 04.02.2011 Resmî Gazete Sayısı: 27836 * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. &times; Kapat Hakkımızda Yardım Resmî Gazete Faydalı Linkler T.C. Cumhurbaşkanlığı Külliyesi Hukuk ve Mevzuat Genel Müdürlüğü 06560 Beştepe / Ankara Bize Ulaşın T.C. Cumhurbaşkanlığı Genel Sekreterliği Hukuk ve Mevzuat Genel Müdürlüğü 2020 Tüm Hakları Saklıdır. Gizlilik, Kullanım ve Telif Hakları bildiriminde belirtilen kurallar çerçevesinde hizmet sunulmaktadır. Bize Ulaşın &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z E-Posta Adresiniz Mesle&#x11F;iniz Konu Seçiniz Mevzuat Hakk&#x131;nda &#x130;nternet Sitesi Hakk&#x131;nda Di&#x11F;er Mesaj Gönder &times; Giriş Yeni Üyelik Şifremi Unuttum Yeni Üyelik × Kaydet Kaydı tamamladığınızda e-posta adresinize aktivasyon için mesaj gönderilecektir. Aktivasyon işlemi sonrası sisteme giriş yapabilirsiniz. Şifremi Unuttum × Şifrenizi sıfırlamak için lütfen sistemde kayıtlı e-posta adresinizi giriniz. Gönder Şifremi Unuttum × Güncelle Tamam
 
-### Madde 24 – Davacı ve davalı
-Dava, davacı tarafından davalı aleyhine açılır. Taraflar, iddia ve savunmalarını usulüne uygun şekilde ileri sürer.
+**Anahtar kelimeler:** madde, kanun
 
-### Madde 189 – İspat yükü
-İspat yükü, iddia eden tarafa aittir. Kanunda özel düzenleme varsa ispat yükü değişebilir.
-
-### Madde 293 – Karar
-Hâkim, toplanan delillere ve yargılamanın sonucuna göre hüküm kurar. Hüküm, gerekçeli yazılır.
+**Hukuk alani:** Hukuk Muhakemeleri Hukuku
 
 ---
 
-## TANIMLAR
 
-- **Davacı:** Mahkemeye başvurarak dava açan taraf (HMK m. 24).
-- **Davalı:** Davacı tarafından dava edilen taraf.
-- **İspat yükü:** Bir iddianın ispatı yükümlülüğü; genel kural olarak iddia eden tarafa aittir (m. 189).
-- **Delil:** İddianın doğruluğunu veya yanlışlığını gösteren vasıta; yazılı delil, tanık, bilirkişi, keşif vb.
-
----
-
-## AÇIKLAMALAR
-
-- HMK, hukuk davalarının açılması, yürütülmesi, delillerin toplanması ve hükmün verilmesi usulünü düzenler.
-- İspat yükü genelde iddia eden tarafa aittir; kanunda aksine hüküm olabilir (ör. sebepsiz zenginleşmede zenginleşenin haklı sebep ispatı).
-- Hüküm gerekçeli yazılır; gerekçe, sonucun dayandığı delilleri ve hukuki nedenleri içerir (m. 293).
-
----
-
-*Güncel metin için Resmî Gazete kontrol edilmelidir.*
+*Son otomatik guncelleme: 2026-03-07. Resmi metin icin mevzuat.gov.tr kullaniniz.*

@@ -83,6 +83,7 @@ Son mevzuat değişiklikleri ve önemli kararlar **güncelleme işleri** ile tak
 - **Günlük/haftalık scriptler:** `npm run legal:update:daily` (mevzuat), `npm run legal:update:weekly` (karar özetleri) veya tam güncelleme `npm run legal:update`.
 - **Çıktı:** `law-data/guncellemeler/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`. Bu dosyalar "Güncel Hukuk Gelişmeleri" sayfasında ve (uygunsa) sohbet/uyarı metinlerinde kullanılır.
 - **Resmî kaynak vurgusu:** Özetler Resmî Gazete ve mahkeme veritabanlarına atıf yapar; kesin metin için kullanıcı bu kaynaklara yönlendirilir.
+- **Günlük otomatik güncelleme:** Haberler, mevzuat RSS çekimi ve güncel hukuk gelişmeleri tek komutla her gün çalıştırılabilir: `npm run daily:update`. Windows’ta **Görev Zamanlayıcı** ile her gün otomatik yapmak için: “Görev Zamanlayıcı”yı açın → Yeni Görev Oluştur → Tetikleyici: Günlük, saat (örn. 06:00) → Eylem: Program başlat → Program: `scripts\run-daily-update.bat` (proje kökünden tam yol verin). Böylece haberler, mevzuat özetleri ve güncel gelişmeler her gün el ile çalıştırmadan güncellenir.
 
 Detaylar için `law-data/guncellemeler/README.md` ve `src/lib/legal-sources.ts` (kaynak öncelik listesi) kullanılabilir.
 
@@ -91,13 +92,20 @@ Detaylar için `law-data/guncellemeler/README.md` ve `src/lib/legal-sources.ts` 
 - Tüm AI route'ları `src/lib/source-grounded.ts` üzerinden ortak kaynak kuralına uyar; `getLawDatabaseContext()` ile law-data bağlamı enjekte edilir.
 - Prompt'lar "KANUN KAYNAK METİNLERİ" ve güncellemeler klasörüne atıf yapar; güncellik uyarıları `src/lib/freshness-warnings.ts` ile eklenebilir.
 
+### Performans optimizasyonları (hız ve yanıt süresi)
+
+- **Kaynak meta önbelleği:** `getSourceMetadata()` sonuçları dosya yolu bazında bellekte önbelleğe alınır; aynı kaynaklar tekrar tekrar okunmaz (Sohbet ve Pratik Çöz değerlendirme daha hızlı).
+- **Daha az bağlam:** RAG'da `TOP_K` 6, `MAX_CONTEXT_CHARS` 4200; sadece en ilgili parçalar modele gider. Chat ve evaluate route'ları 6 chunk kullanır.
+- **Sınıflandırma:** Sorgu sınıflandırmada giriş 600 karakterle sınırlandı; daha az token, daha hızlı classification.
+- **Law-database:** Tam bağlam 24k, sınav bağlamı 12k karakterle sınırlı; ilk yüklemeden sonra her ikisi de bellekte önbelleğe alınır.
+- **Yükleme deneyimi:** Pratik Çöz’de değerlendirme sırasında “Kaynaklar taranıyor, cevap analiz ediliyor…” metni ve sonuç alanında iskelet (skeleton) gösterilir; Sohbet’te “Yanıt hazırlanıyor…” etiketi gösterilir.
 
 ---
 
 ## Kurulum ve çalıştırma
 
 ```bash
-npm install
+npm install   # docx dahil tüm bağımlılıklar (Word dışa aktarma için gerekli)
 npm run dev
 ```
 

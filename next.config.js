@@ -3,6 +3,7 @@ const nextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  serverExternalPackages: ['docx'],
 }
 
 module.exports = nextConfig

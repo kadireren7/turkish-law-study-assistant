@@ -1,6 +1,7 @@
 /**
  * Source transparency: parse frontmatter from law-data markdown and build
  * "Kullanılan kaynak" / "Güncellik notu" data for legal responses.
+ * Human-readable labels: e.g. "Türk Ceza Kanunu (5237) m.21", "Konu Notu: Ceza Hukuku Genel Hükümler".
  */
 import path from 'path'
 import fs from 'fs/promises'
@@ -51,8 +52,24 @@ const PATH_TO_LAW_NAME: Record<string, string> = {
   'konu-notlari/ticaret-hukuku-giris.md': 'Ticaret Hukuku Giriş (konu notları)',
   'konu-notlari/is-hukuku-giris.md': 'İş Hukuku Giriş (konu notları)',
   'konu-notlari/idare-hukuku-giris.md': 'İdare Hukuku Giriş (konu notları)',
-  'guncellemeler/recent-amendments.md': 'Son Değişiklikler',
-  'guncellemeler/recent-important-decisions.md': 'Son Önemli Kararlar',
+  'guncellemeler/recent-amendments.md': 'Güncel Gelişme: Resmî Gazete / Mevzuat Değişiklikleri',
+  'guncellemeler/recent-important-decisions.md': 'Güncel Gelişme: Yargıtay / AYM Karar Özetleri',
+}
+
+/** Human-readable labels for konu-notlari (topic notes). Used when path not in map. */
+const KONU_NOTA_TITLES: Record<string, string> = {
+  'ceza-genel-hukumler': 'Ceza Hukuku Genel Hükümler',
+  'medeni-giris': 'Medeni Hukuk Giriş',
+  'borclar-genel': 'Borçlar Hukuku Genel',
+  'anayasa-genel': 'Anayasa Hukuku Genel',
+  'idare-genel': 'İdare Hukuku Genel',
+  'usul-temelleri': 'Usul Hukuku Temelleri',
+  'cmk-temelleri': 'CMK Temelleri',
+  'hmk-temelleri': 'HMK Temelleri',
+  'icra-iflas-temelleri': 'İcra İflas Temelleri',
+  'ticaret-hukuku-giris': 'Ticaret Hukuku Giriş',
+  'is-hukuku-giris': 'İş Hukuku Giriş',
+  'idare-hukuku-giris': 'İdare Hukuku Giriş',
 }
 
 function parseFrontmatter(content: string): { last_checked?: string; source?: string; legal_area?: string } {
@@ -73,18 +90,91 @@ function parseFrontmatter(content: string): { last_checked?: string; source?: st
   return out
 }
 
-function lawNameFromPath(relativePath: string): string {
+/**
+ * Always returns a human-readable label; never raw file names or paths.
+ * Maps: mevzuat → law name + number, madde-index → law name, konu-notlari → topic title, guncellemeler → current developments label.
+ */
+export function lawNameFromPath(relativePath: string): string {
   const normalized = relativePath.replace(/^law-data[\\/]/, '').replace(/\\/g, '/')
-  return PATH_TO_LAW_NAME[normalized] ?? path.basename(relativePath, path.extname(relativePath))
+  const exact = PATH_TO_LAW_NAME[normalized]
+  if (exact) return exact
+  const base = path.basename(normalized, path.extname(normalized))
+  if (normalized.includes('konu-notlari/')) {
+    return 'Konu Notu: ' + (KONU_NOTA_TITLES[base] ?? base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  }
+  if (normalized.includes('guncellemeler/')) {
+    if (normalized.includes('amendment') || normalized.includes('degisiklik')) return 'Güncel Gelişme: Mevzuat Değişiklikleri'
+    if (normalized.includes('decision') || normalized.includes('karar')) return 'Güncel Gelişme: Karar Özetleri'
+    return 'Güncel Gelişme: Resmî Gazete / Karar Özetleri'
+  }
+  if (normalized.includes('mevzuat/')) return 'Mevzuat: ' + (base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  if (normalized.includes('madde-index/')) return 'Madde metni: ' + (base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+  return base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/** Extract article number from heading like "Madde 21", "Madde 21 – Başlık", "TCK Madde 21". */
+function extractMaddeFromHeading(heading: string): string | null {
+  const m = heading.match(/(?:^|\s)Madde\s+(\d+)/i) ?? heading.match(/(?:^|\s)m\.\s*(\d+)/i)
+  return m ? m[1]! : null
 }
 
 /**
+ * Build one human-readable label from filePath + optional heading.
+ * Law + number + article when available (e.g. "Türk Ceza Kanunu (5237) m.21").
+ * Konu notları: "Konu Notu: Ceza Hukuku Genel Hükümler". Guncellemeler: "Güncel Gelişme: ...".
+ */
+export function toHumanReadableLabel(filePath: string, heading?: string): string {
+  const name = lawNameFromPath(filePath)
+  const madde = heading ? extractMaddeFromHeading(heading) : null
+  if (madde) return `${name} m.${madde}`
+  const normalized = filePath.replace(/\\/g, '/')
+  if (normalized.includes('konu-notlari/')) return name.startsWith('Konu Notu:') ? name : 'Konu Notu: ' + name
+  if (normalized.includes('guncellemeler/')) return name.startsWith('Güncel Gelişme:') ? name : 'Güncel Gelişme: ' + name
+  return name
+}
+
+/** Veri çekildiği / yanıt üretildiği anın tarihi (Son kontrol için). YYYY-MM-DD. */
+export function getRetrievalDate(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** Deduplicate and sort human-readable labels from chunk refs. */
+export function toHumanReadableSourceLabels(chunksUsed: { filePath: string; heading: string }[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const { filePath, heading } of chunksUsed) {
+    const label = toHumanReadableLabel(filePath, heading)
+    if (seen.has(label)) continue
+    seen.add(label)
+    out.push(label)
+  }
+  return out
+}
+
+/** In-memory cache for source metadata to avoid repeated file reads on every chat/evaluate request. */
+const sourceMetaCache = new Map<string, SourceMeta>()
+
+/**
  * Load metadata for given law-data file paths (relative to cwd, e.g. law-data/mevzuat/tck.md).
+ * Results are cached by path so repeated requests for the same sources do not re-read files.
  */
 export async function getSourceMetadata(filePaths: string[]): Promise<SourceMeta[]> {
   const unique = [...new Set(filePaths)]
   const result: SourceMeta[] = []
+  const toFetch: string[] = []
   for (const rel of unique) {
+    const cached = sourceMetaCache.get(rel)
+    if (cached) {
+      result.push(cached)
+    } else {
+      toFetch.push(rel)
+    }
+  }
+  for (const rel of toFetch) {
     const fullPath = path.join(process.cwd(), rel)
     let content = ''
     try {
@@ -94,38 +184,42 @@ export async function getSourceMetadata(filePaths: string[]): Promise<SourceMeta
     }
     const fm = parseFrontmatter(content)
     const fileName = path.basename(rel)
-    result.push({
+    const meta: SourceMeta = {
       filePath: rel,
       fileName,
       lawName: lawNameFromPath(rel),
       last_checked: fm.last_checked,
       legal_area: fm.legal_area,
-    })
+    }
+    sourceMetaCache.set(rel, meta)
+    result.push(meta)
   }
   return result
 }
 
 /**
- * Format a single source line for "Kullanılan kaynak" section.
+ * Format a single source line for "Kullanılan kaynak" section. Never use file name; only human-readable lawName.
+ * Son kontrol = veri çekildiği an (retrievalDate); dosyadaki last_checked artık kullanılmıyor.
  */
-function formatSourceLine(m: SourceMeta): string {
-  const parts = [`- ${m.fileName} (${m.lawName})`]
-  if (m.last_checked) parts.push(`Son kontrol: ${m.last_checked}`)
+function formatSourceLine(m: SourceMeta, retrievalDate: string): string {
+  const parts = ['- ' + m.lawName]
+  parts.push('Son kontrol: ' + retrievalDate)
   return parts.join('; ')
 }
 
 /**
  * Build the text block to inject so the model can output "Kullanılan kaynak" with correct data.
- * Also instructs to list article numbers if cited in the answer.
+ * Son kontrol = veri çekildiği an (retrievalDate); yoksa bugünün tarihi.
  */
-export function buildSourceTransparencyBlock(metadata: SourceMeta[], fromGuncellemeler: boolean): string {
+export function buildSourceTransparencyBlock(metadata: SourceMeta[], fromGuncellemeler: boolean, retrievalDate?: string): string {
+  const date = retrievalDate ?? getRetrievalDate()
   const lines = [
     'KULLANILAN KAYNAK BÖLÜMÜ (yanıtın mutlaka bu bölümle bitmeli):',
     '',
     '**Kullanılan kaynak**',
-    ...metadata.map(formatSourceLine),
+    ...metadata.map((m) => formatSourceLine(m, date)),
     '',
-    'Yanıtta atıf yaptığın madde numaralarını (örn. TCK m. 81, TBK m. 77) bu bölümde de yaz. Yukarıdaki dosyalarda Son kontrol (last_checked) varsa aynen kullan; ek uyarı ekleme.',
+    'Yanıtta atıf yaptığın madde numaralarını (örn. TCK m. 81, TBK m. 77) bu bölümde de yaz. Son kontrol tarihini yukarıdaki gibi aynen kullan; ek uyarı ekleme.',
   ]
   if (fromGuncellemeler) {
     lines.push('', '**Güncellik notu**', 'Bu yanıt guncellemeler klasöründeki kaynaklara dayanmaktadır; güncel gelişmeler için Resmî Gazete ve ilgili portallar kontrol edilmelidir.')
@@ -134,16 +228,15 @@ export function buildSourceTransparencyBlock(metadata: SourceMeta[], fromGuncell
 }
 
 /**
- * Default source block for APIs that use full mevzuat (no RAG): fixed list of mevzuat files.
+ * Default source block for APIs that use full mevzuat (no RAG). Only human-readable names.
  */
 export const DEFAULT_MEVZUAT_SOURCE_BLOCK = `
 KULLANILAN KAYNAK BÖLÜMÜ (yanıtın mutlaka bu bölümle bitmeli):
 
 **Kullanılan kaynak**
-- Yerel dosyalar: law-data/mevzuat (anayasa, tck, tmk, tbk, cmk, hmk, iik, ttk, idari-yargilama-usulu, is-kanunu, kabahatler, idare) ve law-data/madde-index (madde metinleri), law-data/konu-notlari (konu notları)
-- Kanunlar: Anayasa (2709), TCK (5237), TMK (4721), TBK (6098), CMK (5271), HMK (6100), İİK (2004), TTK (6102), İYUK (2577), İş K. (4857), Kabahatler (5326), İdare Hukuku
-- Madde numaraları: Yanıtta atıf yaptığın maddeleri bu bölümde belirt.
-- Güncellik: Güncel metin için Resmî Gazete kontrol edilmeli.
+- Türkiye Cumhuriyeti Anayasası (2709), Türk Ceza Kanunu (5237), Türk Medeni Kanunu (4721), Türk Borçlar Kanunu (6098), Ceza Muhakemesi Kanunu (5271), Hukuk Muhakemeleri Kanunu (6100), İcra ve İflas Kanunu (2004), Türk Ticaret Kanunu (6102), İdari Yargılama Usulü Kanunu (2577), İş Kanunu (4857), Kabahatler Kanunu (5326), İdare Hukuku; konu notları ve madde metinleri.
+- Madde numaraları: Yanıtta atıf yaptığın maddeleri (örn. TCK m. 81, TBK m. 77) bu bölümde belirt.
+- Güncel metin için Resmî Gazete kontrol edilmeli.
 `.trim()
 
 export function isFromGuncellemeler(filePaths: string[]): boolean {

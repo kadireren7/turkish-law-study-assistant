@@ -9,13 +9,23 @@ export type ChatResponse = {
   lastChecked?: string | null
   lowConfidence?: boolean
   warnings?: string[]
+  /** Güven düzeyi: yuksek | orta | dusuk */
+  confidence?: 'yuksek' | 'orta' | 'dusuk'
+  /** Soru sınıfı (mevzuat_sorusu, olay_analizi, karar_analizi, vb.) */
+  queryType?: string
+  /** Sınıflandırma güveni: yuksek | orta | dusuk */
+  classificationConfidence?: 'yuksek' | 'orta' | 'dusuk'
 }
 
-export async function sendChatMessage(messages: ChatMessage[]): Promise<ChatResponse> {
+export async function sendChatMessage(messages: ChatMessage[], options?: { uyapMode?: boolean; explanationMode?: 'ogrenci' | 'uyap' }): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({
+      messages,
+      uyapMode: options?.uyapMode ?? false,
+      explanationMode: options?.explanationMode ?? (options?.uyapMode ? 'uyap' : 'ogrenci'),
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -29,30 +39,49 @@ export async function sendChatMessage(messages: ChatMessage[]): Promise<ChatResp
     lastChecked: typeof data.lastChecked === 'string' ? data.lastChecked : data.lastChecked === null ? null : undefined,
     lowConfidence: Boolean(data.lowConfidence),
     warnings: Array.isArray(data.warnings) ? data.warnings : undefined,
+    confidence: data.confidence === 'yuksek' || data.confidence === 'orta' || data.confidence === 'dusuk' ? data.confidence : undefined,
+    queryType: typeof data.queryType === 'string' ? data.queryType : undefined,
+    classificationConfidence: data.classificationConfidence === 'yuksek' || data.classificationConfidence === 'orta' || data.classificationConfidence === 'dusuk' ? data.classificationConfidence : undefined,
   }
 }
 
-export async function analyzeCase(caseText: string): Promise<string> {
+export type CaseAnalysisResult = {
+  analysis: string
+  confidence?: import('@/lib/confidence').ConfidenceLevel
+  classification?: { category: string; confidence: number }
+}
+
+export async function analyzeCase(
+  caseText: string,
+  options?: { explanationMode?: 'ogrenci' | 'uyap' }
+): Promise<CaseAnalysisResult> {
   const res = await fetch(`${API_BASE}/case`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ caseText }),
+    body: JSON.stringify({
+      caseText: caseText.trim(),
+      explanationMode: options?.explanationMode ?? 'ogrenci',
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     const msg = data.error ?? 'Olay analizi yapılamadı.'
     throw new Error(typeof msg === 'string' ? msg : 'Olay analizi yapılamadı.')
   }
-  return data.analysis ?? ''
+  return {
+    analysis: data.analysis ?? '',
+    confidence: data.confidence,
+    classification: data.classification,
+  }
 }
 
-export async function generateQuiz(topic: string): Promise<{
+export async function generateQuiz(topic: string, count: number = 5): Promise<{
   questions: { question: string; options: string[]; correct: string; explanation: string }[]
 }> {
   const res = await fetch(`${API_BASE}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ topic, count }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -104,34 +133,69 @@ export async function searchLawArticle(query: string): Promise<LawSearchResult> 
   return data as LawSearchResult
 }
 
-export async function getLesson(subject: string, topic: string): Promise<string> {
+export type LessonResult = {
+  content: string
+  confidence?: import('@/lib/confidence').ConfidenceLevel
+  classification?: { category: string; confidence: number }
+}
+
+export async function getLesson(
+  subject: string,
+  topic: string,
+  options?: { explanationMode?: 'ogrenci' | 'uyap' }
+): Promise<LessonResult> {
   const res = await fetch(`${API_BASE}/lesson`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subject: subject.trim(), topic: topic.trim() }),
+    body: JSON.stringify({
+      subject: subject.trim(),
+      topic: topic.trim(),
+      explanationMode: options?.explanationMode ?? 'ogrenci',
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     const msg = data.error ?? 'Ders yüklenirken hata oluştu'
     throw new Error(typeof msg === 'string' ? msg : 'Ders yüklenirken hata oluştu')
   }
-  return data.content ?? ''
+  return {
+    content: data.content ?? '',
+    confidence: data.confidence,
+    classification: data.classification,
+  }
 }
 
 export type ExamEvaluation = {
   score: number
   feedback: string
+  generalAssessment?: string
   strongPoints?: string[]
   improvePoints?: string[]
+  legalErrors?: string[]
+  missedPoints?: string[]
+  suggestionForHigherGrade?: string
+  exampleSkeleton?: string
+  problemIdentification?: string
+  ruleApplication?: string
   howToImprove?: string
   summary?: string
+  /** Yanıtın kaynaklara dayanma güveni: Yüksek / Orta / Düşük güven */
+  confidence?: import('@/lib/confidence').ConfidenceLevel
 }
 
-export async function generateExamQuestion(topic: string): Promise<string> {
+export async function generateExamQuestion(
+  topic: string,
+  options?: ExamGenerateOptions
+): Promise<string> {
   const res = await fetch(`${API_BASE}/exam-practice/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topic: topic.trim() }),
+    body: JSON.stringify({
+      topic: topic.trim(),
+      count: 1,
+      questionType: options?.questionType ?? 'olay',
+      difficulty: options?.difficulty ?? 'karisik',
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -141,10 +205,40 @@ export async function generateExamQuestion(topic: string): Promise<string> {
   return data.question ?? ''
 }
 
+export type ExamGenerateOptions = {
+  questionType?: 'olay' | 'madde' | 'klasik' | 'coktan' | 'dogruyanlis' | 'karma'
+  difficulty?: 'kolay' | 'orta' | 'zor' | 'karisik'
+}
+
+export async function generateExamQuestions(
+  topic: string,
+  count: number,
+  options?: ExamGenerateOptions
+): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/exam-practice/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic: topic.trim(),
+      count: Math.min(50, Math.max(1, count)),
+      questionType: options?.questionType ?? 'olay',
+      difficulty: options?.difficulty ?? 'karisik',
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error ?? 'Sorular oluşturulamadı'
+    throw new Error(typeof msg === 'string' ? msg : 'Sorular oluşturulamadı')
+  }
+  if (count === 1 && data.question) return [data.question]
+  return Array.isArray(data.questions) ? data.questions : []
+}
+
 export async function evaluateExamAnswer(
   question: string,
   userAnswer: string,
-  topic?: string
+  topic?: string,
+  options?: { explanationMode?: 'ogrenci' | 'uyap' }
 ): Promise<ExamEvaluation> {
   const res = await fetch(`${API_BASE}/exam-practice/evaluate`, {
     method: 'POST',
@@ -153,6 +247,7 @@ export async function evaluateExamAnswer(
       question: question.trim(),
       userAnswer: userAnswer.trim(),
       topic: topic?.trim(),
+      explanationMode: options?.explanationMode ?? 'ogrenci',
     }),
   })
   const data = await res.json().catch(() => ({}))
@@ -161,4 +256,53 @@ export async function evaluateExamAnswer(
     throw new Error(typeof msg === 'string' ? msg : 'Değerlendirme yapılamadı')
   }
   return data as ExamEvaluation
+}
+
+export type DecisionAnalysisResult = {
+  analysis: string
+  kisaOzet?: string
+  olay?: string
+  hukukiSorun?: string
+  mahkemeYaklasimi?: string
+  dayanilanKurallar?: string
+  karardanCikarilabilecekDers?: string
+  sinavdaNasilKullanilabilir?: string
+  farkliYorumIhtimali?: string
+  kullanilanKaynak?: string
+  sourceLabels?: string[]
+  lastChecked?: string
+  confidence?: import('@/lib/confidence').ConfidenceLevel
+}
+
+export type OralExamMessage = { role: 'user' | 'assistant'; content: string }
+
+export async function sendOralExamMessage(
+  topic: string,
+  messages: OralExamMessage[]
+): Promise<{ reply: string }> {
+  const res = await fetch(`${API_BASE}/oral-exam`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: topic.trim(), messages }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error ?? 'Sözlü yoklama yanıtı alınamadı.'
+    throw new Error(typeof msg === 'string' ? msg : 'Sözlü yoklama yanıtı alınamadı.')
+  }
+  return { reply: data.reply ?? '' }
+}
+
+export async function analyzeDecision(text: string): Promise<DecisionAnalysisResult> {
+  const res = await fetch(`${API_BASE}/decision-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text.trim() }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error ?? 'Karar analizi yapılamadı.'
+    throw new Error(typeof msg === 'string' ? msg : 'Karar analizi yapılamadı.')
+  }
+  return data as DecisionAnalysisResult
 }

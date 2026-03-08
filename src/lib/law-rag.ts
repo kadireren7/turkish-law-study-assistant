@@ -4,16 +4,20 @@
  * - Chunks by section headings (## and ###)
  * - Builds in-memory index with OpenAI embeddings
  * - Retrieves relevant chunks per question and injects into model context
- * - Tracks source files for citation; signals low confidence when no sources found.
+ * - Context uses human-readable source labels only (never raw file paths).
  */
 import path from 'path'
 import fs from 'fs/promises'
 import OpenAI from 'openai'
+import { toHumanReadableLabel } from '@/lib/source-metadata'
+import { filterChunksBySourceGroups, type SourceGroupId } from '@/lib/source-routing'
 
 const LAW_DATA_DIR = path.join(process.cwd(), 'law-data')
 const OPENAI_EMBEDDING_MODEL = 'text-embedding-3-small'
-const TOP_K = 12
-const MIN_SIMILARITY = 0.2
+const TOP_K = 6
+const MIN_SIMILARITY = 0.22
+const MAX_CONTEXT_CHARS = 4200
+const QUERY_EMBED_MAX_CHARS = 4000
 
 export type LawChunk = {
   id: string
@@ -23,9 +27,12 @@ export type LawChunk = {
   embedding: number[]
 }
 
+export type ChunkRef = { filePath: string; heading: string }
+
 export type RagResult = {
   context: string
   sources: string[]
+  chunksUsed: ChunkRef[]
   lowConfidence: boolean
 }
 
@@ -234,30 +241,49 @@ export async function getLawRagIndex(openai: OpenAI): Promise<LawChunk[]> {
   return cachedIndex
 }
 
+/** Optional source routing: lower tier value = higher priority. Keys: mevzuat, madde-index, konu-notlari, guncellemeler */
+export type SourceTierOverrides = Partial<Record<'mevzuat' | 'madde-index' | 'konu-notlari' | 'guncellemeler', number>>
+
 /**
  * Retrieve relevant chunks for a query and build context string + unique source list.
  * If no chunks above MIN_SIMILARITY, returns empty context and lowConfidence: true.
+ * - sourceTierOverrides: öncelik sırası (kaynak tipine göre).
+ * - allowedSourceGroups: yalnızca bu kaynak grupları taranır; verilmezse tüm index taranır. Hız için daraltma.
  */
-export async function retrieveForQuery(query: string, openai: OpenAI, topK: number = TOP_K): Promise<RagResult> {
-  const index = await getLawRagIndex(openai)
+export async function retrieveForQuery(
+  query: string,
+  openai: OpenAI,
+  topK: number = TOP_K,
+  options?: { sourceTierOverrides?: SourceTierOverrides; allowedSourceGroups?: SourceGroupId[] }
+): Promise<RagResult> {
+  const fullIndex = await getLawRagIndex(openai)
+  const index = options?.allowedSourceGroups?.length
+    ? filterChunksBySourceGroups(fullIndex, options.allowedSourceGroups)
+    : fullIndex
   if (index.length === 0) {
-    return { context: '', sources: [], lowConfidence: true }
+    return { context: '', sources: [], chunksUsed: [], lowConfidence: true }
   }
   const queryEmbeddingRes = await openai.embeddings.create({
     model: OPENAI_EMBEDDING_MODEL,
-    input: query.slice(0, 8000),
+    input: query.slice(0, QUERY_EMBED_MAX_CHARS),
   })
   const queryEmb = queryEmbeddingRes.data[0]?.embedding
   if (!queryEmb || !Array.isArray(queryEmb)) {
-    return { context: '', sources: [], lowConfidence: true }
+    return { context: '', sources: [], chunksUsed: [], lowConfidence: true }
   }
-  /** Priority: 1 = mevzuat, 2 = madde-index, 3 = konu-notlari, 4 = guncellemeler. Lower tier first, then by score desc. */
+  const overrides = options?.sourceTierOverrides ?? {}
+  const defaultTiers: Record<string, number> = {
+    'mevzuat/': 1,
+    'madde-index/': 2,
+    'konu-notlari/': 3,
+    'guncellemeler/': 4,
+  }
   function sourceTier(filePath: string): number {
     const normalized = filePath.replace(/\\/g, '/')
-    if (normalized.includes('mevzuat/')) return 1
-    if (normalized.includes('madde-index/')) return 2
-    if (normalized.includes('konu-notlari/')) return 3
-    if (normalized.includes('guncellemeler/')) return 4
+    if (normalized.includes('mevzuat/')) return overrides['mevzuat'] ?? defaultTiers['mevzuat/']!
+    if (normalized.includes('madde-index/')) return overrides['madde-index'] ?? defaultTiers['madde-index/']!
+    if (normalized.includes('konu-notlari/')) return overrides['konu-notlari'] ?? defaultTiers['konu-notlari/']!
+    if (normalized.includes('guncellemeler/')) return overrides['guncellemeler'] ?? defaultTiers['guncellemeler/']!
     return 3
   }
   const scored = index
@@ -271,12 +297,21 @@ export async function retrieveForQuery(query: string, openai: OpenAI, topK: numb
     })
     .slice(0, topK)
   const sources = [...new Set(scored.map((s) => s.chunk.filePath))]
-  const context = scored
-    .map((s) => `[Kaynak: ${s.chunk.filePath}]\n${s.chunk.text}`)
+  const chunksUsed: ChunkRef[] = scored.map((s) => ({ filePath: s.chunk.filePath, heading: s.chunk.heading }))
+  const chunkMaxChars = Math.ceil(MAX_CONTEXT_CHARS / Math.max(scored.length, 1))
+  let context = scored
+    .map((s) => {
+      const text = s.chunk.text.length > chunkMaxChars ? s.chunk.text.slice(0, chunkMaxChars) + ' […]' : s.chunk.text
+      return `[Kaynak: ${toHumanReadableLabel(s.chunk.filePath, s.chunk.heading)}]\n${text}`
+    })
     .join('\n\n---\n\n')
+  if (context.length > MAX_CONTEXT_CHARS) {
+    context = context.slice(0, MAX_CONTEXT_CHARS) + '\n\n[...]'
+  }
   return {
     context,
     sources,
+    chunksUsed,
     lowConfidence: scored.length === 0,
   }
 }

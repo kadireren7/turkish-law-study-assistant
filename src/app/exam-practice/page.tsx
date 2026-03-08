@@ -1,27 +1,47 @@
 'use client'
 
 import { useState } from 'react'
-import { generateExamQuestion, evaluateExamAnswer, type ExamEvaluation } from '@/lib/api'
+import { generateExamQuestions, evaluateExamAnswer, type ExamEvaluation, type ExamGenerateOptions } from '@/lib/api'
+import { printPracticeSet, slugForFilename, dateSlugForFilename } from '@/lib/export-questions'
+
+const QUESTION_COUNTS = [5, 10, 15, 25, 50] as const
+
+const QUESTION_TYPES = [
+  { value: 'olay', label: 'Olay sorusu' },
+  { value: 'madde', label: 'Madde sorusu' },
+  { value: 'klasik', label: 'Klasik soru' },
+  { value: 'coktan', label: 'Çoktan seçmeli' },
+  { value: 'dogruyanlis', label: 'Doğru / Yanlış' },
+  { value: 'karma', label: 'Karma' },
+] as const
+
+const DIFFICULTIES = [
+  { value: 'kolay', label: 'Kolay' },
+  { value: 'orta', label: 'Orta' },
+  { value: 'zor', label: 'Zor' },
+  { value: 'karisik', label: 'Karışık' },
+] as const
 
 const EXAM_TOPICS = [
-  { value: 'Anayasa Hukuku – temel haklar ve özgürlükler', label: 'Anayasa Hukuku – temel haklar' },
-  { value: 'Anayasa Hukuku – devlet organları', label: 'Anayasa Hukuku – devlet organları' },
-  { value: 'Borçlar Hukuku – sözleşme ve ifa', label: 'Borçlar Hukuku – sözleşme' },
-  { value: 'Borçlar Hukuku – sebepsiz zenginleşme', label: 'Borçlar Hukuku – sebepsiz zenginleşme' },
-  { value: 'Borçlar Hukuku – haksız fiil', label: 'Borçlar Hukuku – haksız fiil' },
-  { value: 'Ceza Hukuku – kast ve taksir', label: 'Ceza Hukuku – kast ve taksir' },
-  { value: 'Ceza Hukuku – suçun unsurları', label: 'Ceza Hukuku – suçun unsurları' },
-  { value: 'Ceza Hukuku – kasten öldürme', label: 'Ceza Hukuku – kasten öldürme' },
-  { value: 'Medeni Hukuk – kişiler ve aile', label: 'Medeni Hukuk – kişiler ve aile' },
-  { value: 'Medeni Hukuk – eşya hukuku', label: 'Medeni Hukuk – eşya hukuku' },
-  { value: 'İdare Hukuku – idari işlem ve idari yargı', label: 'İdare Hukuku – idari işlem' },
+  { value: 'Ceza Hukuku – kast, taksir, suçun unsurları', label: 'Ceza' },
+  { value: 'Medeni Hukuk – kişiler, ehliyet, aile, mülkiyet', label: 'Medeni' },
+  { value: 'Borçlar Hukuku – sözleşme, ifa, haksız fiil', label: 'Borçlar' },
+  { value: 'Anayasa Hukuku – temel haklar, devlet organları', label: 'Anayasa' },
+  { value: 'İdare Hukuku – idari işlem, idari yargı', label: 'İdare' },
+  { value: 'Ceza Muhakemesi Kanunu – CMK temel usul', label: 'CMK' },
+  { value: 'Hukuk Muhakemeleri Kanunu – HMK temel usul', label: 'HMK' },
+  { value: 'Ceza, Medeni, Borçlar, Usul karışık', label: 'Karma' },
   { value: 'other', label: 'Diğer (aşağıda yazın)' },
 ] as const
 
 export default function ExamPracticePage() {
   const [topicSelect, setTopicSelect] = useState<string>(EXAM_TOPICS[0].value)
   const [customTopic, setCustomTopic] = useState('')
-  const [question, setQuestion] = useState('')
+  const [questionCount, setQuestionCount] = useState<number>(5)
+  const [questionType, setQuestionType] = useState<ExamGenerateOptions['questionType']>('olay')
+  const [difficulty, setDifficulty] = useState<ExamGenerateOptions['difficulty']>('karisik')
+  const [questions, setQuestions] = useState<string[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [userAnswer, setUserAnswer] = useState('')
   const [evaluation, setEvaluation] = useState<ExamEvaluation | null>(null)
   const [loadingGenerate, setLoadingGenerate] = useState(false)
@@ -29,20 +49,24 @@ export default function ExamPracticePage() {
   const [error, setError] = useState('')
 
   const topic = topicSelect === 'other' ? customTopic.trim() : topicSelect
+  const topicLabel = EXAM_TOPICS.find((t) => t.value === topicSelect)?.label ?? topic
+  const currentQuestion = questions[currentIndex] ?? ''
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
     if (!topic || loadingGenerate) return
     setLoadingGenerate(true)
     setError('')
-    setQuestion('')
+    setQuestions([])
+    setCurrentIndex(0)
     setUserAnswer('')
     setEvaluation(null)
     try {
-      const q = await generateExamQuestion(topic)
-      setQuestion(q)
+      const list = await generateExamQuestions(topic, questionCount, { questionType, difficulty })
+      setQuestions(list)
+      setCurrentIndex(0)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Soru oluşturulamadı.')
+      setError(err instanceof Error ? err.message : 'Sorular oluşturulamadı.')
     } finally {
       setLoadingGenerate(false)
     }
@@ -50,12 +74,16 @@ export default function ExamPracticePage() {
 
   async function handleEvaluate(e: React.FormEvent) {
     e.preventDefault()
-    if (!question || !userAnswer.trim() || loadingEvaluate) return
+    if (!currentQuestion || !userAnswer.trim() || loadingEvaluate) return
     setLoadingEvaluate(true)
     setError('')
     setEvaluation(null)
     try {
-      const result = await evaluateExamAnswer(question, userAnswer.trim(), topic || undefined)
+      const result = await evaluateExamAnswer(
+        currentQuestion,
+        userAnswer.trim(),
+        topic || undefined
+      )
       setEvaluation(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Değerlendirme yapılamadı.')
@@ -71,11 +99,11 @@ export default function ExamPracticePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50/80">
+    <div className="flex flex-1 flex-col min-h-0 bg-slate-50/80">
       <header className="shrink-0 border-b border-slate-200 bg-white px-4 sm:px-6 py-4 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-800">Sınav Pratiği</h2>
         <p className="text-sm text-slate-500 mt-0.5">
-          Kısa cevaplı ve klasik hukuk sınav soruları üretilir. Cevabınızı yazın; puan, güçlü yönler, eksikler ve nasıl daha iyi yazılır geri bildirimi alın.
+          Soru tipi, zorluk ve konu seçin; soruları oluşturup cevabınızı yazın. PDF veya Word olarak dışa aktarabilirsiniz.
         </p>
       </header>
 
@@ -110,12 +138,58 @@ export default function ExamPracticePage() {
                 />
               </label>
             )}
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Soru tipi</span>
+              <select
+                value={questionType}
+                onChange={(e) => setQuestionType(e.target.value as ExamGenerateOptions['questionType'])}
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                disabled={loadingGenerate}
+              >
+                {QUESTION_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Zorluk</span>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as ExamGenerateOptions['difficulty'])}
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                disabled={loadingGenerate}
+              >
+                {DIFFICULTIES.map((d) => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Soru sayısı</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {QUESTION_COUNTS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setQuestionCount(n)}
+                    disabled={loadingGenerate}
+                    className={`min-w-[3rem] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      questionCount === n
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {n} soru
+                  </button>
+                ))}
+              </div>
+            </label>
             <button
               type="submit"
               disabled={loadingGenerate || !topic}
               className="px-6 py-3 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
-              {loadingGenerate ? 'Soru hazırlanıyor...' : 'Soru oluştur'}
+              {loadingGenerate ? 'Sorular hazırlanıyor...' : 'Soruları oluştur'}
             </button>
           </form>
 
@@ -125,11 +199,86 @@ export default function ExamPracticePage() {
             </div>
           )}
 
-          {question && (
+          {questions.length > 0 && (
             <>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const typeLabel = QUESTION_TYPES.find((t) => t.value === questionType)?.label ?? questionType ?? 'Olay sorusu'
+                    const diffLabel = DIFFICULTIES.find((d) => d.value === difficulty)?.label ?? difficulty ?? 'Karışık'
+                    printPracticeSet({
+                      title: 'Sınav Pratiği – Soru Seti',
+                      topic: topicLabel ?? topic,
+                      questionType: typeLabel,
+                      difficulty: diffLabel,
+                      date: new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }),
+                      questions,
+                    })
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
+                >
+                  PDF olarak kaydet (Yazdır)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/exam-practice/export', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          topic: topicLabel,
+                          questionType,
+                          difficulty,
+                          questions,
+                        }),
+                      })
+                      if (!res.ok) throw new Error('Dışa aktarma başarısız')
+                      const blob = await res.blob()
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `sinav-pratik-${slugForFilename(topicLabel)}-${dateSlugForFilename()}.docx`
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : 'Word dışa aktarma başarısız')
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
+                >
+                  Word (.docx) indir
+                </button>
+              </div>
+              {questions.length > 1 && (
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                  <p className="text-sm font-medium text-slate-600 mb-2">Soru seçin</p>
+                  <div className="flex flex-wrap gap-2">
+                    {questions.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setCurrentIndex(i)
+                          setEvaluation(null)
+                        }}
+                        className={`min-w-[2.5rem] px-2 py-1.5 rounded-lg text-sm font-medium ${
+                          currentIndex === i ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                <h3 className="text-sm font-semibold text-teal-700 mb-2">Soru</h3>
-                <p className="text-slate-800 whitespace-pre-wrap">{question}</p>
+                <h3 className="text-sm font-semibold text-teal-700 mb-2">
+                  Soru {questions.length > 1 ? `${currentIndex + 1} / ${questions.length}` : ''}
+                </h3>
+                <p className="text-slate-800 whitespace-pre-wrap">{currentQuestion}</p>
               </div>
 
               <form onSubmit={handleEvaluate} className="space-y-4">
@@ -138,7 +287,7 @@ export default function ExamPracticePage() {
                   <textarea
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
-                    placeholder="Cevabınızı sınavda yazar gibi buraya yazın..."
+                    placeholder="Olay özeti, hukuki sorun, uygulanacak kurallar, değerlendirme ve sonuç şeklinde yazabilirsiniz..."
                     rows={8}
                     className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y bg-white shadow-sm"
                     disabled={loadingEvaluate}
@@ -164,10 +313,25 @@ export default function ExamPracticePage() {
                   {evaluation.score}/100
                 </span>
               </div>
-              {evaluation.summary && (
-                <p className="text-slate-700 text-sm border-l-4 border-teal-200 pl-3 py-1">
-                  {evaluation.summary}
-                </p>
+              {(evaluation.generalAssessment || evaluation.summary) && (
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-1">Genel değerlendirme</h4>
+                  <p className="text-slate-700 text-sm border-l-4 border-teal-200 pl-3 py-1 whitespace-pre-wrap">
+                    {evaluation.generalAssessment || evaluation.summary}
+                  </p>
+                </div>
+              )}
+              {evaluation.problemIdentification && (
+                <div>
+                  <h4 className="text-sm font-semibold text-teal-700 mb-1">Hukuki sorun tespiti</h4>
+                  <p className="text-slate-700 text-sm whitespace-pre-wrap">{evaluation.problemIdentification}</p>
+                </div>
+              )}
+              {evaluation.ruleApplication && (
+                <div>
+                  <h4 className="text-sm font-semibold text-teal-700 mb-1">Doğru kural uygulaması</h4>
+                  <p className="text-slate-700 text-sm whitespace-pre-wrap">{evaluation.ruleApplication}</p>
+                </div>
               )}
               {evaluation.strongPoints && evaluation.strongPoints.length > 0 && (
                 <div>
@@ -189,11 +353,39 @@ export default function ExamPracticePage() {
                   </ul>
                 </div>
               )}
-              {evaluation.howToImprove && (
+              {evaluation.legalErrors && evaluation.legalErrors.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-teal-700 mb-1">Nasıl daha iyi yazılır</h4>
+                  <h4 className="text-sm font-semibold text-red-700 mb-1">Hukuki hatalar</h4>
+                  <ul className="list-disc list-inside text-slate-700 text-sm space-y-0.5">
+                    {evaluation.legalErrors.map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {evaluation.missedPoints && evaluation.missedPoints.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-700 mb-1">Atlanan noktalar</h4>
+                  <ul className="list-disc list-inside text-slate-700 text-sm space-y-0.5">
+                    {evaluation.missedPoints.map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {(evaluation.suggestionForHigherGrade || evaluation.howToImprove) && (
+                <div>
+                  <h4 className="text-sm font-semibold text-teal-700 mb-1">Sınavda daha yüksek not için öneri</h4>
                   <div className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
-                    {evaluation.howToImprove}
+                    {evaluation.suggestionForHigherGrade || evaluation.howToImprove}
+                  </div>
+                </div>
+              )}
+              {evaluation.exampleSkeleton && (
+                <div>
+                  <h4 className="text-sm font-semibold text-teal-700 mb-1">Örnek güçlü cevap iskeleti</h4>
+                  <div className="text-slate-700 text-sm whitespace-pre-wrap p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    {evaluation.exampleSkeleton}
                   </div>
                 </div>
               )}

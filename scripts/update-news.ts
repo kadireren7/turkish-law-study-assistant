@@ -1,15 +1,20 @@
 #!/usr/bin/env npx tsx
 /**
- * Haber verisi: RSS beslemelerinden gerçek haber çeker.
+ * Haber verisi: Hukuk haber sitelerinden RSS ile veri çeker.
  *
- * - Resmi Gazete, AYM, Yargıtay, AA, TRT vb. RSS adreslerinden veri alır.
- * - Her öğede: başlık (baslik), tarih (tarih), kaynak, özet (kisaOzet), link, görsel (varsa).
- * - Eksik alanlarda asla hata vermez; sadece o besleme/öğe atlanır.
- * - Sonuçlar en yeni önce sıralanır.
- * - Çıktı: law-data/haberler/hukuk-haberleri.json, law-data/haberler/siyaset-gundemi.json
+ * Kaynaklar (sadece bu üç site):
+ * - https://www.hukukihaber.net/
+ * - https://www.turkiyehukuk.org/
+ * - https://www.adaletbiz.com/
  *
- * Modlar: --mode=all | law | politics
- * Çalıştırma: npm run news:update | npm run news:update:law | npm run news:update:politics
+ * Her öğede: başlık (baslik), tarih (tarih), kaynak, özet (kisaOzet), link, görsel (varsa).
+ * RSS’te görsel yoksa makale sayfasından og:image çekilir (en fazla OG_IMAGE_MAX_ITEMS kadar).
+ * Eksik alanlarda asla hata vermez; sadece o besleme/öğe atlanır.
+ * Sonuçlar en yeni önce sıralanır.
+ * Çıktı: law-data/haberler/hukuk-haberleri.json (siyaset gündemi kaldırıldı)
+ *
+ * Modlar: --mode=all | law (all = sadece hukuk haberleri)
+ * Çalıştırma: npm run news:update | npm run news:update:law
  */
 import path from 'path'
 import fs from 'fs/promises'
@@ -18,25 +23,18 @@ import Parser from 'rss-parser'
 const ROOT = process.cwd()
 const HABERLER_DIR = path.join(ROOT, 'law-data', 'haberler')
 const HUKUK_PATH = path.join(HABERLER_DIR, 'hukuk-haberleri.json')
-const SIYASET_PATH = path.join(HABERLER_DIR, 'siyaset-gundemi.json')
 const LAST_UPDATE_PATH = path.join(HABERLER_DIR, 'last-update.json')
 
 const RSS_TIMEOUT_MS = 15_000
+const OG_IMAGE_FETCH_TIMEOUT_MS = 8_000
+const OG_IMAGE_MAX_ITEMS = 20
+const OG_IMAGE_CONCURRENCY = 3
 
-/** Hukuk haberleri için RSS beslemeleri (Resmi Gazete, AYM, Yargıtay, AA, büyük siteler). */
+/** Hukuk haberleri: sadece hukukihaber.net, turkiyehukuk.org, adaletbiz.com */
 const HUKUK_FEEDS: { url: string; kaynak: string; kategori: string }[] = [
-  { url: 'https://www.aa.com.tr/rss/ajansguncel.xml', kaynak: 'Anadolu Ajansı', kategori: 'Hukuk / Gündem' },
-  { url: 'https://www.trthaber.com/sondakika.rss', kaynak: 'TRT Haber', kategori: 'Gündem' },
-  { url: 'https://www.resmigazete.gov.tr/rss.xml', kaynak: 'Resmî Gazete', kategori: 'Resmî Gazete' },
-  { url: 'https://www.anayasa.gov.tr/tr/rss/', kaynak: 'Anayasa Mahkemesi', kategori: 'AYM' },
-  { url: 'https://www.yargitay.gov.tr/rss', kaynak: 'Yargıtay', kategori: 'Yargıtay' },
-]
-
-/** Siyaset gündemi için RSS beslemeleri (AA, TRT, büyük haber siteleri). */
-const SIYASET_FEEDS: { url: string; kaynak: string; kategori: string }[] = [
-  { url: 'https://www.aa.com.tr/tr/teyithatti/rss/news?cat=politika', kaynak: 'Anadolu Ajansı', kategori: 'Politika' },
-  { url: 'https://www.aa.com.tr/rss/ajansguncel.xml', kaynak: 'Anadolu Ajansı', kategori: 'Gündem' },
-  { url: 'https://www.trthaber.com/sondakika.rss', kaynak: 'TRT Haber', kategori: 'Son Dakika' },
+  { url: 'https://www.hukukihaber.net/index.php?format=feed&type=rss', kaynak: 'Hukuki Haber', kategori: 'Hukuk' },
+  { url: 'https://www.turkiyehukuk.org/feed/', kaynak: 'Türkiye Hukuk', kategori: 'Hukuk' },
+  { url: 'https://www.adaletbiz.com/index.php?format=feed&type=rss', kaynak: 'Adaletbiz', kategori: 'Hukuk' },
 ]
 
 /** Canonical news item: all fields required for clean JSON output. */
@@ -57,14 +55,14 @@ type Feed = {
   items: NewsItem[]
 }
 
-function getMode(): 'all' | 'law' | 'politics' {
+function getMode(): 'all' | 'law' {
   const arg = process.argv.find((a) => a.startsWith('--mode='))
   if (arg) {
     const v = arg.split('=')[1]?.toLowerCase()
-    if (v === 'law' || v === 'politics' || v === 'all') return v
+    if (v === 'law' || v === 'all') return v
   }
   const env = process.env.NEWS_UPDATE_MODE?.toLowerCase()
-  if (env === 'law' || env === 'politics' || env === 'all') return env
+  if (env === 'law' || env === 'all') return env
   return 'all'
 }
 
@@ -231,7 +229,64 @@ async function fetchOneRssFeed(
   }
 }
 
-/** Tüm beslemeleri çek, birleştir, en yeni önce sırala. */
+/** Makale sayfasından og:image URL'sini çeker; hata/timeout'ta null. */
+async function fetchOgImageFromPage(articleUrl: string): Promise<string | null> {
+  if (!articleUrl || !articleUrl.startsWith('http')) return null
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), OG_IMAGE_FETCH_TIMEOUT_MS)
+    const res = await fetch(articleUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'HukukHaberleriBot/1.0 (https://hukuk-calisma; news images)',
+        Accept: 'text/html',
+      },
+      redirect: 'follow',
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) return null
+    const html = await res.text()
+    const m = html.match(/<meta[^>]+property\s*=\s*["']og:image["'][^>]+content\s*=\s*["']([^"']+)["']/i)
+      ?? html.match(/<meta[^>]+content\s*=\s*["']([^"']+)["'][^>]+property\s*=\s*["']og:image["']/i)
+    if (m && m[1]) {
+      const url = m[1].trim()
+      if (url.startsWith('http://') || url.startsWith('https://')) return url
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** Görseli olmayan haberler için link sayfasından og:image çekip doldurur (sınırlı sayıda). */
+async function enrichItemsWithOgImage(items: NewsItem[]): Promise<NewsItem[]> {
+  const needImage = items.filter((i) => !(i.imageUrl && i.imageUrl.trim()) && i.link && i.link.trim())
+  if (needImage.length === 0) return items
+  const toEnrich = needImage.slice(0, OG_IMAGE_MAX_ITEMS)
+  const results = [...items]
+  const run = async (batch: NewsItem[]) => {
+    const out = await Promise.all(
+      batch.map(async (item) => {
+        const url = await fetchOgImageFromPage(item.link!)
+        return { item, url }
+      })
+    )
+    return out
+  }
+  for (let i = 0; i < toEnrich.length; i += OG_IMAGE_CONCURRENCY) {
+    const batch = toEnrich.slice(i, i + OG_IMAGE_CONCURRENCY)
+    const pairs = await run(batch)
+    for (const { item, url } of pairs) {
+      if (url && item.link) {
+        const idx = results.findIndex((r) => r.link === item.link && r.baslik === item.baslik)
+        if (idx !== -1) results[idx] = { ...results[idx], imageUrl: url }
+      }
+    }
+  }
+  return results
+}
+
+/** Tüm beslemeleri çek, birleştir, en yeni önce sırala; görseli olmayanlara og:image doldur. */
 async function fetchAllFeeds(
   feeds: { url: string; kaynak: string; kategori: string }[]
 ): Promise<NewsItem[]> {
@@ -252,7 +307,8 @@ async function fetchAllFeeds(
     const items = await fetchOneRssFeed(f.url, f.kaynak, f.kategori, parser)
     if (items.length > 0) results.push(...items)
   }
-  return sortByNewestFirst(results)
+  const sorted = sortByNewestFirst(results)
+  return enrichItemsWithOgImage(sorted)
 }
 
 /** Keep item if it has at least one of title, date, source, imageUrl, link. */
@@ -300,25 +356,13 @@ async function loadFeed(filePath: string): Promise<Feed> {
   }
 }
 
-function placeholderItem(kind: 'law' | 'politics'): NewsItem {
+function placeholderItem(): NewsItem {
   const today = getCurrentDateString()
-  if (kind === 'law') {
-    return {
-      baslik: '[ÖRNEK / TEST] Hukuk haberleri – canlı veri henüz eklenmedi',
-      tarih: today,
-      kaynak: 'Örnek veri (npm run news:update:law ile güncellenir)',
-      kisaOzet: 'Resmî Gazete, Yargıtay, AYM vb. kaynaklardan veri eklendiğinde burada listelenecektir.',
-      nedenOnemli: 'Bu kayıt test amaçlıdır; gerçek güncel kaynaklardan çekilmemiştir.',
-      kategori: 'Örnek',
-      imageUrl: null,
-      link: null,
-    }
-  }
   return {
-    baslik: '[ÖRNEK / TEST] Siyaset gündemi – canlı veri henüz eklenmedi',
+    baslik: '[ÖRNEK / TEST] Hukuk haberleri – canlı veri henüz eklenmedi',
     tarih: today,
-    kaynak: 'Örnek veri (npm run news:update:politics ile güncellenir)',
-    kisaOzet: 'Güvenilir haber kaynaklarından veri eklendiğinde burada listelenecektir.',
+    kaynak: 'Örnek veri (npm run news:update ile güncellenir)',
+    kisaOzet: 'Resmî Gazete, Yargıtay, AYM vb. kaynaklardan veri eklendiğinde burada listelenecektir.',
     nedenOnemli: 'Bu kayıt test amaçlıdır; gerçek güncel kaynaklardan çekilmemiştir.',
     kategori: 'Örnek',
     imageUrl: null,
@@ -346,7 +390,6 @@ async function saveFeedAtomic(filePath: string, feed: Feed): Promise<void> {
 async function updateFileFromRss(
   filePath: string,
   feeds: { url: string; kaynak: string; kategori: string }[],
-  kind: 'law' | 'politics'
 ): Promise<{ after: number }> {
   let items: NewsItem[] = []
   try {
@@ -359,7 +402,7 @@ async function updateFileFromRss(
     if (existing.items.length > 0) {
       items = sortByNewestFirst(existing.items)
     } else {
-      items = [placeholderItem(kind)]
+      items = [placeholderItem()]
     }
   }
   const next: Feed = {
@@ -386,14 +429,8 @@ async function main(): Promise<void> {
   console.log('Haberler güncelleme –', runDate.slice(0, 19), '[mod:', mode + ']')
 
   try {
-    if (mode === 'all' || mode === 'law') {
-      const r = await updateFileFromRss(HUKUK_PATH, HUKUK_FEEDS, 'law')
-      console.log('  hukuk-haberleri.json:', r.after, 'madde (en yeni önce)')
-    }
-    if (mode === 'all' || mode === 'politics') {
-      const r = await updateFileFromRss(SIYASET_PATH, SIYASET_FEEDS, 'politics')
-      console.log('  siyaset-gundemi.json:', r.after, 'madde (en yeni önce)')
-    }
+    const r = await updateFileFromRss(HUKUK_PATH, HUKUK_FEEDS)
+    console.log('  hukuk-haberleri.json:', r.after, 'madde (en yeni önce)')
     await writeLastSuccessfulUpdate(runDate)
     console.log('  last-update.json güncellendi.')
     console.log('Bitti.')

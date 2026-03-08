@@ -1,30 +1,55 @@
 /**
  * POST /api/exam-practice/evaluate
  * Body: { question: string, userAnswer: string, topic?: string }
- * Returns: { score: number, feedback: string, strongPoints?: string[], improvePoints?: string[], summary?: string }
+ * Returns: { score, feedback, confidence?, ... }
+ * Uses retrieval on question for source-backed feedback and answer confidence.
  */
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { EXAM_EVALUATOR_PROMPT } from '@/lib/exam-practice-prompt'
+import { IRAC_TEMPLATE } from '@/lib/legal-reasoning'
+import { getRetrievalResult } from '@/lib/legal-brain'
 import { getLawDatabaseContext } from '@/lib/law-database'
-import { buildSystemContentWithSources } from '@/lib/source-grounded'
+import { buildSystemContentWithSources, EXPLANATION_MODE_INSTRUCTIONS } from '@/lib/source-grounded'
+import { getSourceMetadata, buildSourceTransparencyBlock, isFromGuncellemeler } from '@/lib/source-metadata'
 import { DEFAULT_MEVZUAT_SOURCE_BLOCK } from '@/lib/source-metadata'
+import { classifyQuery } from '@/lib/query-classifier'
+import {
+  inferRelevantLawFromFacts,
+  buildEnrichedQueryForRetrieval,
+  formatInferenceForPrompt,
+} from '@/lib/fact-to-law-inference'
+import { confidenceFromRetrieval } from '@/lib/confidence'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
 
 function parseEvaluation(text: string): {
   score: number
   feedback: string
+  generalAssessment: string
   strongPoints: string[]
   improvePoints: string[]
+  legalErrors: string[]
+  missedPoints: string[]
+  suggestionForHigherGrade: string
+  exampleSkeleton: string
+  problemIdentification: string
+  ruleApplication: string
   howToImprove: string
   summary: string
 } {
   const result = {
     score: 0,
     feedback: text,
+    generalAssessment: '',
     strongPoints: [] as string[],
     improvePoints: [] as string[],
+    legalErrors: [] as string[],
+    missedPoints: [] as string[],
+    suggestionForHigherGrade: '',
+    exampleSkeleton: '',
+    problemIdentification: '',
+    ruleApplication: '',
     howToImprove: '',
     summary: '',
   }
@@ -32,26 +57,47 @@ function parseEvaluation(text: string): {
   const puanMatch = text.match(/\*\*PUAN:\*\*\s*(\d+)/i)
   if (puanMatch) result.score = Math.min(100, Math.max(0, parseInt(puanMatch[1], 10)))
 
-  const strongMatch = text.match(/\*\*GÜÇLÜ YÖNLER:\*\*[\s\S]*?(?=\*\*[A-ZĞİÖÜŞ]|$)/i)
-  if (strongMatch) {
-    const block = strongMatch[0].replace(/\*\*GÜÇLÜ YÖNLER:\*\*/i, '').trim()
-    result.strongPoints = block.split(/\n[-*•]\s*/).map((s) => s.trim()).filter(Boolean)
+  const section = (heading: string): string => {
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp(`\\*\\*${escaped}\\*\\*:?\\s*([\\s\\S]*?)(?=\\n\\s*\\*\\*|$)`, 'i')
+    const m = text.match(re)
+    return m ? m[1].trim() : ''
   }
 
-  const improveMatch = text.match(/\*\*EKSİKLER[^*]*:?\s*\n([\s\S]*?)(?=\n\s*\*\*[A-ZĞİÖÜŞ]|$)/i)
-  if (improveMatch && improveMatch[1]) {
-    const block = improveMatch[1].trim()
-    result.improvePoints = block.split(/\n[-*•]\s*/).map((s) => s.trim()).filter(Boolean)
+  const sectionList = (heading: string): string[] => {
+    const block = section(heading)
+    if (!block) return []
+    return block.split(/\n[-*•]\s*/).map((s) => s.trim()).filter(Boolean)
   }
 
-  const howMatch = text.match(/\*\*NASIL DAHA İYİ YAZILIR:\*\*[\s\S]*?(?=\n\s*\*\*[A-ZĞİÖÜŞ]|$)/i)
-  if (howMatch) {
-    result.howToImprove = howMatch[0].replace(/\*\*NASIL DAHA İYİ YAZILIR:\*\*/i, '').trim()
+  result.generalAssessment = section('GENEL DEĞERLENDİRME')
+  result.strongPoints = sectionList('GÜÇLÜ YÖNLER')
+  if (result.strongPoints.length === 0) {
+    const alt = text.match(/\*\*DOĞRU NOKTALAR:\*\*[\s\S]*?(?=\*\*[A-ZĞİÖÜŞ]|$)/i)
+    if (alt) {
+      const block = alt[0].replace(/\*\*DOĞRU NOKTALAR:\*\*/gi, '').trim()
+      result.strongPoints = block.split(/\n[-*•]\s*/).map((s) => s.trim()).filter(Boolean)
+    }
   }
 
-  const summaryMatch = text.match(/\*\*KISA ÖZET:\*\*[\s\S]*?(?=\*\*|$)/i)
-  if (summaryMatch) {
-    result.summary = summaryMatch[0].replace(/\*\*KISA ÖZET:\*\*/i, '').trim()
+  result.improvePoints = sectionList('EKSİKLER')
+  result.legalErrors = sectionList('HUKUKİ HATALAR')
+  result.missedPoints = sectionList('ATLANAN NOKTALAR')
+  result.suggestionForHigherGrade =
+      section('SINAVDA DAHA YÜKSEK NOT İÇİN ÖNERİ') ||
+      section('SINAVDA DAHA İYİ NASIL YAZILIR') ||
+      section('SINAVDA DAHA YÜKSEK NOT İÇİN ÖNERİ / SINAVDA DAHA İYİ NASIL YAZILIR')
+  result.exampleSkeleton =
+    section('ÖRNEK GÜÇLÜ CEVAP İSKELETİ') || section('ÖRNEK DAHA İYİ CEVAP İSKELETİ')
+
+  result.problemIdentification = section('HUKUKİ SORUN TESPİTİ')
+  result.ruleApplication = section('DOĞRU KURAL UYGULAMASI')
+  result.howToImprove = section('NASIL DAHA İYİ YAZILIR') || result.suggestionForHigherGrade
+  result.summary = section('GENEL DEĞERLENDİRME') || section('KISA ÖZET')
+  if (!result.summary && result.generalAssessment) result.summary = result.generalAssessment
+  if (!result.summary) {
+    const kisa = text.match(/\*\*KISA ÖZET:\*\*[\s\S]*?(?=\*\*|$)/i)
+    if (kisa) result.summary = kisa[0].replace(/\*\*KISA ÖZET:\*\*/i, '').trim()
   }
 
   return result
@@ -67,9 +113,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json() as { question?: string; userAnswer?: string; topic?: string }
+    const body = await request.json() as { question?: string; userAnswer?: string; topic?: string; explanationMode?: 'ogrenci' | 'uyap' }
     const question = typeof body.question === 'string' ? body.question.trim() : ''
     const userAnswer = typeof body.userAnswer === 'string' ? body.userAnswer.trim() : ''
+    const explanationMode = body.explanationMode === 'uyap' ? 'uyap' : 'ogrenci'
 
     if (!question || !userAnswer) {
       return NextResponse.json(
@@ -78,12 +125,30 @@ export async function POST(request: Request) {
       )
     }
 
-    const lawContext = await getLawDatabaseContext()
-    const systemContent = buildSystemContentWithSources(
+    const { queryType, confidence: classificationConfidence } = await classifyQuery(question.slice(0, 600), openai)
+    const questionSlice = question.slice(0, 2500)
+    const inference = await inferRelevantLawFromFacts(questionSlice, openai)
+    const enrichedQuery = buildEnrichedQueryForRetrieval(questionSlice, inference)
+    const retrieval = await getRetrievalResult(enrichedQuery, openai, 6, { queryType: queryType ?? 'sinav_pratigi' })
+    const lawContext =
+      retrieval.lowConfidence || retrieval.context.length < 200
+        ? await getLawDatabaseContext()
+        : retrieval.context
+    let sourceBlock = DEFAULT_MEVZUAT_SOURCE_BLOCK
+    if (!retrieval.lowConfidence && retrieval.sources.length > 0) {
+      const metadata = await getSourceMetadata(retrieval.sources)
+      sourceBlock = buildSourceTransparencyBlock(metadata, isFromGuncellemeler(retrieval.sources))
+    }
+    let systemContent = buildSystemContentWithSources(
       EXAM_EVALUATOR_PROMPT,
       lawContext,
-      DEFAULT_MEVZUAT_SOURCE_BLOCK
+      sourceBlock
     )
+    systemContent += `\n\nHUKUKİ MANTIK (değerlendirme referansı):\n${IRAC_TEMPLATE}\n\nÖğrenci cevabını yukarıdaki beş boyuta (sorun tespiti, kural seçimi, uygulama, sonuç, yazım gücü) ve IRAC sırasına göre değerlendir.`
+    systemContent += EXPLANATION_MODE_INSTRUCTIONS[explanationMode]
+    const inferenceBlock = formatInferenceForPrompt(inference)
+    if (inferenceBlock) systemContent += '\n\n' + inferenceBlock
+    systemContent += '\n\nGeri bildirim (GENEL DEĞERLENDİRME, GÜÇLÜ YÖNLER, EKSİKLER, HUKUKİ HATALAR, ATLANAN NOKTALAR, PUAN, SINAVDA DAHA YÜKSEK NOT İÇİN ÖNERİ, ÖRNEK GÜÇLÜ CEVAP İSKELETİ) yukarıdaki açıklama moduna göre ver: Öğrenci Dostu ise sade ve yapıcı dil; UYAP ise resmî, yapısal ifade. Soruda olaydan çıkarılan dallar ve normlar verildiyse, öğrencinin bu dalları ve normları doğru tespit edip uygulamasını puanlamada artı say; atlamasını eksiklik say.'
 
     const userContent = `SORU:\n${question}\n\nÖĞRENCİ CEVABI:\n${userAnswer}`
 
@@ -94,7 +159,7 @@ export async function POST(request: Request) {
         { role: 'user', content: userContent },
       ],
       temperature: 0.3,
-      max_tokens: 2048,
+      max_tokens: 3072,
     })
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? ''
@@ -103,13 +168,23 @@ export async function POST(request: Request) {
     }
 
     const parsed = parseEvaluation(raw)
+    const answerConfidence = confidenceFromRetrieval(retrieval, queryType)
     return NextResponse.json({
       score: parsed.score,
       feedback: raw,
+      generalAssessment: parsed.generalAssessment || undefined,
       strongPoints: parsed.strongPoints.length ? parsed.strongPoints : undefined,
       improvePoints: parsed.improvePoints.length ? parsed.improvePoints : undefined,
+      legalErrors: parsed.legalErrors.length ? parsed.legalErrors : undefined,
+      missedPoints: parsed.missedPoints.length ? parsed.missedPoints : undefined,
+      suggestionForHigherGrade: parsed.suggestionForHigherGrade || undefined,
+      exampleSkeleton: parsed.exampleSkeleton || undefined,
+      problemIdentification: parsed.problemIdentification || undefined,
+      ruleApplication: parsed.ruleApplication || undefined,
       howToImprove: parsed.howToImprove || undefined,
-      summary: parsed.summary || undefined,
+      summary: parsed.summary || parsed.generalAssessment || undefined,
+      confidence: answerConfidence,
+      classification: { category: queryType, confidence: classificationConfidence },
     })
   } catch (e) {
     console.error('Exam evaluate API error:', e)

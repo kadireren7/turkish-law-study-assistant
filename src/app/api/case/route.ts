@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { CASE_ANALYSIS_SYSTEM_PROMPT } from '@/lib/case-analysis-prompt'
+import { getRetrievalResult } from '@/lib/legal-brain'
 import { getLawDatabaseContext } from '@/lib/law-database'
-import { buildSystemContentWithSources } from '@/lib/source-grounded'
+import { buildSystemContentWithSources, EXPLANATION_MODE_INSTRUCTIONS } from '@/lib/source-grounded'
+import { getSourceMetadata, buildSourceTransparencyBlock, isFromGuncellemeler } from '@/lib/source-metadata'
 import { DEFAULT_MEVZUAT_SOURCE_BLOCK } from '@/lib/source-metadata'
+import { classifyQuery } from '@/lib/query-classifier'
+import { confidenceFromRetrieval } from '@/lib/confidence'
+import { TARTISMALI_KONU_CASE_INSTRUCTION } from '@/lib/viewpoints-prompt'
+import { getLegalReasoningInstruction } from '@/lib/legal-reasoning'
+import {
+  inferRelevantLawFromFacts,
+  buildEnrichedQueryForRetrieval,
+  formatInferenceForPrompt,
+} from '@/lib/fact-to-law-inference'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
 
@@ -17,17 +28,43 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { caseText } = await request.json() as { caseText?: string }
-    if (!caseText || typeof caseText !== 'string') {
+    const body = await request.json() as { caseText?: string; explanationMode?: 'ogrenci' | 'uyap' }
+    const caseText = typeof body.caseText === 'string' ? body.caseText : ''
+    const explanationMode = body.explanationMode === 'uyap' ? 'uyap' : 'ogrenci'
+
+    if (!caseText.trim()) {
       return NextResponse.json({ error: 'Vaka metni gerekli' }, { status: 400 })
     }
 
-    const lawContext = await getLawDatabaseContext()
-    const systemContent = buildSystemContentWithSources(
+    const queryForClassification = caseText.slice(0, 1500)
+    const { queryType, confidence: classificationConfidence } = await classifyQuery(queryForClassification, openai)
+    const caseSlice = caseText.slice(0, 3000)
+    const inference = await inferRelevantLawFromFacts(caseSlice, openai)
+    const enrichedQuery = buildEnrichedQueryForRetrieval(caseSlice, inference)
+    const retrieval = await getRetrievalResult(enrichedQuery, openai, 10, { queryType })
+    const lawContext =
+      retrieval.lowConfidence || retrieval.context.length < 300
+        ? await getLawDatabaseContext()
+        : retrieval.context
+    let sourceBlock = DEFAULT_MEVZUAT_SOURCE_BLOCK
+    if (!retrieval.lowConfidence && retrieval.sources.length > 0) {
+      const metadata = await getSourceMetadata(retrieval.sources)
+      sourceBlock = buildSourceTransparencyBlock(metadata, isFromGuncellemeler(retrieval.sources))
+    }
+    let systemContent = buildSystemContentWithSources(
       CASE_ANALYSIS_SYSTEM_PROMPT,
       lawContext,
-      DEFAULT_MEVZUAT_SOURCE_BLOCK
+      sourceBlock
     )
+    const inferenceBlock = formatInferenceForPrompt(inference)
+    if (inferenceBlock) systemContent += '\n\n' + inferenceBlock
+    systemContent += EXPLANATION_MODE_INSTRUCTIONS[explanationMode]
+    if (explanationMode === 'uyap') {
+      systemContent += '\n\n' + getLegalReasoningInstruction({ formalMode: true })
+    }
+    if (queryType === 'tartismali_konu') {
+      systemContent += `\n\n${TARTISMALI_KONU_CASE_INSTRUCTION}`
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -44,7 +81,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Model analiz üretmedi' }, { status: 502 })
     }
 
-    return NextResponse.json({ analysis })
+    const answerConfidence = confidenceFromRetrieval(retrieval, queryType)
+    return NextResponse.json({
+      analysis,
+      confidence: answerConfidence,
+      classification: { category: queryType, confidence: classificationConfidence },
+    })
   } catch (e) {
     console.error('Case API error:', e)
     if (e instanceof OpenAI.APIError) {

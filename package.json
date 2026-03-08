@@ -11,11 +11,16 @@
     "legal:update:daily": "tsx scripts/update-legal-data.ts --schedule=daily",
     "legal:update:weekly": "tsx scripts/update-legal-data.ts --schedule=weekly",
     "update-legal": "npm run legal:update",
+    "laws:update": "tsx scripts/update-laws.ts",
+    "laws:update:daily": "tsx scripts/update-laws.ts --schedule=daily",
     "news:update": "tsx scripts/update-news.ts --mode=all",
     "news:update:law": "tsx scripts/update-news.ts --mode=law",
-    "news:update:politics": "tsx scripts/update-news.ts --mode=politics"
+    "mevzuat:fetch": "tsx scripts/fetch-mevzuat.ts",
+    "amendments:fetch": "tsx scripts/fetch-amendments-rss.ts",
+    "daily:update": "tsx scripts/daily-update.ts"
   },
   "dependencies": {
+    "docx": "^9.5.0",
     "next": "^16.1.6",
     "rss-parser": "^3.13.0",
     "openai": "^4.52.0",
@@ -23,6 +28,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "playwright": "^1.49.0",
     "tsx": "^4.19.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

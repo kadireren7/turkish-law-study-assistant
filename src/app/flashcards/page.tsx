@@ -34,7 +34,7 @@ export default function FlashcardsPage() {
   const hasCards = cards.length > 0
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50/80">
+    <div className="flex flex-1 flex-col min-h-0 bg-slate-50/80">
       <header className="shrink-0 border-b border-slate-200 bg-white px-4 sm:px-6 py-4 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-800">Bilgi Kartları</h2>
         <p className="text-sm text-slate-500 mt-0.5">

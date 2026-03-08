@@ -3,6 +3,7 @@
  * GET veya POST ile çağrılır; RSS’ten veri çekip law-data/haberler dosyalarını günceller.
  * Günlük cron veya “yeni gün” tetikleyicisi için kullanılır.
  * İsteğe bağlı: CRON_SECRET env ile yetkilendirme (Authorization: Bearer <CRON_SECRET>).
+ * Bu, kullanıcı hesabı/üyelik değildir; yalnızca cron/sunucu çağrılarını korur. CRON_SECRET yoksa tarayıcı da tetikleyebilir.
  */
 import { NextResponse } from 'next/server'
 import { exec } from 'child_process'

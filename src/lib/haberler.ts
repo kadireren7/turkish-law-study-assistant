@@ -8,7 +8,6 @@ import fs from 'fs/promises'
 
 const HABERLER_DIR = path.join(process.cwd(), 'law-data', 'haberler')
 const HUKUK_PATH = path.join(HABERLER_DIR, 'hukuk-haberleri.json')
-const SIYASET_PATH = path.join(HABERLER_DIR, 'siyaset-gundemi.json')
 const LAST_UPDATE_PATH = path.join(HABERLER_DIR, 'last-update.json')
 
 export type HaberItem = {
@@ -30,9 +29,7 @@ export type HaberlerFeed = {
 
 export type HaberlerPageData = {
   hukukHaberleri: HaberItem[]
-  siyasetGundemi: HaberItem[]
   hukukMeta: { lastUpdated: string | null; isExampleData: boolean }
-  siyasetMeta: { lastUpdated: string | null; isExampleData: boolean }
   currentDateFormatted: string
   hasRealUpdate: boolean
   lastSuccessfulUpdate: string | null
@@ -125,29 +122,19 @@ async function loadLastSuccessfulUpdate(): Promise<string | null> {
 }
 
 export async function getHaberlerPageData(): Promise<HaberlerPageData> {
-  const [hukukFeed, siyasetFeed, lastSuccessfulUpdate] = await Promise.all([
+  const [hukukFeed, lastSuccessfulUpdate] = await Promise.all([
     loadFeed(HUKUK_PATH),
-    loadFeed(SIYASET_PATH),
     loadLastSuccessfulUpdate(),
   ])
 
   const hukukItems = sortByNewestFirst(hukukFeed.items)
-  const siyasetItems = sortByNewestFirst(siyasetFeed.items)
-
-  const hasRealUpdate =
-    (hukukFeed.lastUpdated != null && hukukFeed.lastUpdated !== '') ||
-    (siyasetFeed.lastUpdated != null && siyasetFeed.lastUpdated !== '')
+  const hasRealUpdate = hukukFeed.lastUpdated != null && hukukFeed.lastUpdated !== ''
 
   return {
     hukukHaberleri: hukukItems,
-    siyasetGundemi: siyasetItems,
     hukukMeta: {
       lastUpdated: hukukFeed.lastUpdated,
       isExampleData: hukukFeed.isExampleData,
-    },
-    siyasetMeta: {
-      lastUpdated: siyasetFeed.lastUpdated,
-      isExampleData: siyasetFeed.isExampleData,
     },
     currentDateFormatted: formatCurrentDate(),
     hasRealUpdate,

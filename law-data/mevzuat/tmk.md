@@ -1,77 +1,30 @@
 ---
-source: "Resmî Gazete (4721 sayılı Kanun)"
-date: "2001-12-08"
-last_checked: "2024-06-01"
+source: "Mevzuat Bilgi Sistemi (mevzuat.gov.tr) - otomatik cekim"
+date: "2026-03-07"
+last_checked: "2026-03-07"
 legal_area: "Medeni Hukuk"
-keywords: "TMK medeni hak ehliyeti fiil ehliyeti dürüstlük örf adet"
+keywords: "medeni hukuk mevzuat kanun madde"
 confidence: "high"
 ---
 
-# Türk Medeni Kanunu (4721 sayılı)
+# Türk Medeni Kanunu (4721 sayili)
 
-Resmî güncel metin için Resmî Gazete ve mevzuat portallarına başvurunuz.
-
----
-
-## Genel Bilgi
-
-- **Kanun adı:** Türk Medeni Kanunu (4721 sayılı)
-- **Kısa açıklama:** Özel hukukun temel kanunu; kişiler, aile, miras, eşya ve borçların genel kısmına ilişkin kurallar.
-- **Hukuk alanı:** Medeni Hukuk
-- **Öğrenci için neden önemli:** Hak ehliyeti-fiil ehliyeti, kanun boşluğu, dürüstlük kuralı (m. 1, 2, 8, 9) sınavda sık sorulur.
+**Kanun adi:** Türk Medeni Kanunu (4721 sayili)
+**Hukuk alani:** Medeni Hukuk
+**Guncel metin:** mevzuat.gov.tr uzerinden otomatik cekilmistir. Resmi teyit icin https://www.mevzuat.gov.tr/ kontrol ediniz.
 
 ---
 
-## KANUN MADDELERİ
+## Madde 1
 
-### Madde 1 – Kanunun uygulanması
-Kanun, sözüyle ve özüyle değindiği bütün konularda uygulanır. Kanunda uygulanabilir bir hüküm yoksa, hakim, örf ve âdet hukukuna göre, bu da yoksa kendisi kanun koyucu olsaydı nasıl bir kural koyacak idiyse ona göre karar verir. Hakim, karar verirken bilimsel görüşlere ve yargı kararlarına başvurabilir.
+**Madde metni:**
+Mevzuat Bilgi Sistemi T.C. CUMHURBAŞKANLIĞI MEVZUAT BİLGİ SİSTEMİ Mevzuat Türü Kanunlar Kanun Hükmünde Kararnameler Cumhurbaşkanlığı Kararnameleri Tüzükler Cumhurbaşkanı Kararları Cumhurbaşkanlığı Genelgeleri Yönetmelikler Tebliğler T.C. Anayasası Mülga Mevzuat Kanunlar Fihristi Cumhurbaşkanlığı Kararnameleri Fihristi Yayınlar CUMHURBAŞKANLIĞI KARARNAMELERİ KÜLLİYATI 205 KANUN TAHKİM KİTABI TAHKİMDE GÜNCEL SORUNLAR V-VI TAHKİMDE GÜNCEL GELİŞMELER SEMİNER KİTABI T.C. RESMÎ GAZETE İLK 100 SAYI CİLT-I T.C. RESMÎ GAZETE İLK 100 SAYI CİLT-II TAHKİM SEMPOZYUM KİTABI Oturum Aç Favorilerim Üye Bilgileri Üye Bilgileri Çıkış MEVZUAT BİLGİ SİSTEMİ Şifre Değiştirme × Güncelle Üyelik Bilgileri × Adınız Soyadınız Mesleğiniz Güncelle Anasayfa Resmî Gazete Tarihi: 08.12.2001 Resmî Gazete Sayısı: 24607 * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. × Kapat Hakkımızda Yardım Resmî Gazete Faydalı Linkler T.C. Cumhurbaşkanlığı Külliyesi Hukuk ve Mevzuat Genel Müdürlüğü 06560 Beştepe / Ankara Bize Ulaşın T.C. Cumhurbaşkanlığı Genel Sekreterliği Hukuk ve Mevzuat Genel Müdürlüğü 2020 Tüm Hakları Saklıdır. Gizlilik, Kullanım ve Telif Hakları bildiriminde belirtilen kurallar çerçevesinde hizmet sunulmaktadır. Bize Ulaşın × Adınız Soyadınız E-Posta Adresiniz Mesleğiniz Konu Seçiniz Mevzuat Hakkında İnternet Sitesi Hakkında Diğer Mesaj Gönder × Giriş Yeni Üyelik Şifremi Unuttum Yeni Üyelik × Kaydet Kaydı tamamladığınızda e-posta adresinize aktivasyon için mesaj gönderilecektir. Aktivasyon işlemi sonrası sisteme giriş yapabilirsiniz. Şifremi Unuttum × Şifrenizi sıfırlamak için lütfen sistemde kayıtlı e-posta adresinizi giriniz. Gönder Şifremi Unuttum × Güncelle Tamam
 
-### Madde 2 – Dürüst davranma
-Herkes, haklarını kullanırken ve borçlarını yerine getirirken dürüstlük kurallarına uymak zorundadır. Bir hakkın açıkça kötüye kullanılması hukuk düzeni tarafından korunmaz.
+**Anahtar kelimeler:** madde, kanun
 
-### Madde 8 – Kişilik
-Her insanın hak ehliyeti vardır. Buna göre bütün insanlar, hukuk düzeninin sınırları içinde haklara ve borçlara eşit olarak ehildir.
-
-### Madde 9 – Fiil ehliyeti
-Fiil ehliyetine sahip olan kimse, kendi fiilleriyle hak edinebilir ve borç altına girebilir.
+**Hukuk alani:** Medeni Hukuk
 
 ---
 
-## TANIMLAR
 
-- **Hak ehliyeti:** Haklara ve borçlara eşit şekilde sahip olma yeteneği. Her insanda doğumla kazanılır (TMK m. 8).
-- **Fiil ehliyeti:** Kişinin kendi fiilleriyle hak edinmesi ve borç altına girebilmesi. Reşitlik, ayırt etme gücü vb. ile sınırlı olabilir (TMK m. 9).
-- **Dürüstlük kuralı:** Hakların kullanılmasında ve borçların ifasında iyiniyet ve objektif dürüstlük; hakkın kötüye kullanılması korunmaz (TMK m. 2).
-- **Örf ve âdet hukuku:** Kanunda hüküm yoksa hakimin başvurabileceği kaynak (TMK m. 1).
-
----
-
-## AÇIKLAMALAR
-
-- TMK m. 1: Kanun boşluğu halinde sırayla örf ve âdet, yoksa hakimin koyacağı kural uygulanır. Hakim bilimsel görüş ve yargı kararlarından yararlanabilir.
-- TMK m. 2: Dürüstlük kuralı tüm özel hukuk ilişkilerinde geçerlidir; hakkın açıkça kötüye kullanılması (abus de droit) korunmaz.
-- Hak ehliyeti ile fiil ehliyeti farklıdır: Herkes hak ehliyetine sahiptir; fiil ehliyeti ise yaş, ayırt etme gücü vb. ile sınırlanabilir.
-
----
-
-## ÖRNEKLER
-
-- **Hak ehliyeti (m. 8):** Yeni doğan çocuk mirasçı olabilir; hak ehliyeti doğumla başlar.
-- **Fiil ehliyeti (m. 9):** Reşit ve ayırt etme gücüne sahip kişi sözleşme yapabilir; küçük veya kısıtlının fiil ehliyeti sınırlıdır.
-- **Dürüstlük (m. 2):** Alacaklı, alacağını tahsil etmek için borçluyu zorla rehin altında tutamaz; hakkın kötüye kullanımı sayılır.
-- **Kanun boşluğu (m. 1):** Kanunda düzenlenmeyen bir uyuşmazlıkta hakim önce örf ve âdete, yoksa kendi koyacağı kurala göre karar verir.
-
----
-
-## KİTAPLAR (Özet)
-
-- Birinci Kitap: Genel hükümler
-- İkinci Kitap: Kişiler hukuku
-- Üçüncü Kitap: Aile hukuku
-- Dördüncü Kitap: Miras hukuku
-- Beşinci Kitap: Eşya hukuku
-
----
-
-*Güncel metin için Resmî Gazete kontrol edilmelidir.*
+*Son otomatik guncelleme: 2026-03-07. Resmi metin icin mevzuat.gov.tr kullaniniz.*

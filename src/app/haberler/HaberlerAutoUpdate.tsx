@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-/** Son güncelleme bugün değilse arka planda API ile güncelleme tetikler; tamamlanınca sayfayı yeniler. */
+/** Son güncelleme bugün değilse arka planda API ile güncelleme tetikler; tamamlanınca sayfayı yeniler. Hesap/üyelik gerekmez. Sunucuda CRON_SECRET tanımlıysa 401 alınabilir; o zaman otomatik güncelleme atlanır, sayfa normal çalışır. */
 export function HaberlerAutoUpdate({ lastSuccessfulUpdate }: { lastSuccessfulUpdate: string | null }) {
   const router = useRouter()
   const triggered = useRef(false)

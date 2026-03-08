@@ -1,58 +1,30 @@
 ---
-source: "Resmî Gazete (5271 sayılı Kanun)"
-date: "2004-12-17"
-last_checked: "2024-06-01"
+source: "Mevzuat Bilgi Sistemi (mevzuat.gov.tr) - otomatik cekim"
+date: "2026-03-07"
+last_checked: "2026-03-07"
 legal_area: "Ceza Muhakemesi Hukuku"
-keywords: "CMK ceza muhakemesi soruşturma kovuşturma delil şüpheli sanık tutuklama"
+keywords: "ceza muhakemesi hukuku mevzuat kanun madde"
 confidence: "high"
 ---
 
-# Ceza Muhakemesi Kanunu (5271 sayılı)
+# Ceza Muhakemesi Kanunu (5271 sayili)
 
-Resmî güncel metin için Resmî Gazete ve mevzuat portallarına başvurunuz.
-
----
-
-## Genel Bilgi
-
-- **Kanun adı:** Ceza Muhakemesi Kanunu (5271 sayılı)
-- **Kısa açıklama:** Ceza yargılamasının usul kuralları; soruşturma, kovuşturma, deliller, tutuklama, şüpheli ve sanık hakları.
-- **Hukuk alanı:** Ceza Muhakemesi Hukuku
-- **Öğrenci için neden önemli:** Soruşturma-kovuşturma ayrımı, tutuklama nedenleri (m. 173), kanuna aykırı delil (m. 217) sınavda sık sorulur.
+**Kanun adi:** Ceza Muhakemesi Kanunu (5271 sayili)
+**Hukuk alani:** Ceza Muhakemesi Hukuku
+**Guncel metin:** mevzuat.gov.tr uzerinden otomatik cekilmistir. Resmi teyit icin https://www.mevzuat.gov.tr/ kontrol ediniz.
 
 ---
 
-## KANUN MADDELERİ
+## Madde 1
 
-### Madde 2 – Amaç ve kapsam
-Ceza muhakemesi, suç şüphesinin araştırılması, kovuşturmanın yürütülmesi ve ceza yargılamasının yapılması ile ilgili usul ve esasları düzenler.
+**Madde metni:**
+Mevzuat Bilgi Sistemi T.C. CUMHURBAŞKANLIĞI MEVZUAT BİLGİ SİSTEMİ Mevzuat Türü Kanunlar Kanun Hükmünde Kararnameler Cumhurbaşkanlığı Kararnameleri Tüzükler Cumhurbaşkanı Kararları Cumhurbaşkanlığı Genelgeleri Yönetmelikler Tebliğler T.C. Anayasası Mülga Mevzuat Kanunlar Fihristi Cumhurbaşkanlığı Kararnameleri Fihristi Yayınlar CUMHURBAŞKANLIĞI KARARNAMELERİ KÜLLİYATI 205 KANUN TAHKİM KİTABI TAHKİMDE GÜNCEL SORUNLAR V-VI TAHKİMDE GÜNCEL GELİŞMELER SEMİNER KİTABI T.C. RESMÎ GAZETE İLK 100 SAYI CİLT-I T.C. RESMÎ GAZETE İLK 100 SAYI CİLT-II TAHKİM SEMPOZYUM KİTABI Oturum Aç Favorilerim Üye Bilgileri Üye Bilgileri Çıkış MEVZUAT BİLGİ SİSTEMİ Şifre Değiştirme × Güncelle Üyelik Bilgileri × Adınız Soyadınız Mesleğiniz Güncelle Anasayfa Resmî Gazete Tarihi: 17.12.2004 Resmî Gazete Sayısı: 25673 * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. × Kapat Hakkımızda Yardım Resmî Gazete Faydalı Linkler T.C. Cumhurbaşkanlığı Külliyesi Hukuk ve Mevzuat Genel Müdürlüğü 06560 Beştepe / Ankara Bize Ulaşın T.C. Cumhurbaşkanlığı Genel Sekreterliği Hukuk ve Mevzuat Genel Müdürlüğü 2020 Tüm Hakları Saklıdır. Gizlilik, Kullanım ve Telif Hakları bildiriminde belirtilen kurallar çerçevesinde hizmet sunulmaktadır. Bize Ulaşın × Adınız Soyadınız E-Posta Adresiniz Mesleğiniz Konu Seçiniz Mevzuat Hakkında İnternet Sitesi Hakkında Diğer Mesaj Gönder × Giriş Yeni Üyelik Şifremi Unuttum Yeni Üyelik × Kaydet Kaydı tamamladığınızda e-posta adresinize aktivasyon için mesaj gönderilecektir. Aktivasyon işlemi sonrası sisteme giriş yapabilirsiniz. Şifremi Unuttum × Şifrenizi sıfırlamak için lütfen sistemde kayıtlı e-posta adresinizi giriniz. Gönder Şifremi Unuttum × Güncelle Tamam
 
-### Madde 160 – Soruşturma evresi
-Soruşturma, savcılık tarafından yürütülür. Şüpheli veya sanık hakkında toplanan deliller, iddianame ile mahkemeye sunulur.
+**Anahtar kelimeler:** madde, kanun
 
-### Madde 173 – Tutuklama
-Tutuklama, suçüstü hâli veya delillerin karartılması, kaçma şüphesi gibi tutuklama nedenlerinin varlığı hâlinde ve orantılı süre ile uygulanır.
-
-### Madde 217 – Deliller
-Deliller, hâkim tarafından serbestçe takdir edilir. Kanuna aykırı olarak elde edilen deliller hükme esas alınamaz.
+**Hukuk alani:** Ceza Muhakemesi Hukuku
 
 ---
 
-## TANIMLAR
 
-- **Soruşturma:** Savcılıkça yürütülen, suç şüphesinin araştırıldığı evre (CMK m. 160).
-- **Kovuşturma:** İddianame sonrası mahkeme önünde yürütülen yargılama evresi.
-- **Tutuklama:** Şüpheli veya sanığın özgürlüğünün geçici olarak kısıtlanması; CMK m. 173’teki nedenlere bağlı.
-- **Delil:** Suçun veya sanığın suçsuzluğunun ispatında kullanılan vasıta; kanuna aykırı delil hükme esas alınamaz (m. 217).
-
----
-
-## AÇIKLAMALAR
-
-- CMK, ceza yargılamasının soruşturma ve kovuşturma aşamalarını, delilleri, tutuklamayı ve temel hakları düzenler.
-- Tutuklama bir önlemdir; zorunluluk ve orantılılık ilkeleri geçerlidir.
-- Kanuna aykırı delil (ör. işkence ile alınan ifade) hükme esas alınamaz.
-
----
-
-*Güncel metin için Resmî Gazete kontrol edilmelidir.*
+*Son otomatik guncelleme: 2026-03-07. Resmi metin icin mevzuat.gov.tr kullaniniz.*

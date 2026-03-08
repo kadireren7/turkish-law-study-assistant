@@ -7,19 +7,21 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
   const isUser = role === 'user'
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-fade-in`}>
       <div
-        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-sm ${
-          isUser ? 'bg-slate-200 text-slate-600' : 'bg-teal-100 text-teal-600'
+        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-sm transition-colors ${
+          isUser
+            ? 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200'
+            : 'bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-500/25 dark:to-emerald-500/25 text-teal-600 dark:text-teal-300'
         }`}
       >
         {isUser ? '👤' : '⚖️'}
       </div>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
+        className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 ${
           isUser
-            ? 'bg-teal-600 text-white rounded-tr-md'
-            : 'bg-white border border-slate-200/80 text-slate-800 rounded-tl-md'
+            ? 'bg-teal-600 dark:bg-teal-500 text-white rounded-tr-md'
+            : 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-md'
         }`}
       >
         {isUser ? (

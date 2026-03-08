@@ -1,54 +1,29 @@
 {
-  "lastRun": "2026-03-07T03:43:48.823Z",
+  "lastRun": "2026-03-08T03:30:51.493Z",
   "previousSnapshot": {
     "law-data/mevzuat/anayasa.md": {
-      "hash": "def8c06601f6771a045ba06b57ac6d3a8169c76ed113c05519f769512fdb5379",
-      "lastModified": "2026-03-07T03:26:02.886Z",
-      "articleNumbers": [
-        "1",
-        "2",
-        "4",
-        "10",
-        "13",
-        "35",
-        "36"
-      ]
+      "hash": "10d41745eb09aff9cb1fe15fe0d7e447cff8f9b937923308bec31ed20818d1d1",
+      "lastModified": "2026-03-08T03:03:46.570Z",
+      "articleNumbers": []
     },
     "law-data/mevzuat/tck.md": {
-      "hash": "36a3cd46ed22e9f4be1f06b87a4ab0d962b4020062f1b43b193b1b13146dde02",
-      "lastModified": "2026-03-07T03:26:16.406Z",
-      "articleNumbers": [
-        "1",
-        "20",
-        "21",
-        "22",
-        "26",
-        "38"
-      ]
+      "hash": "eeb57d19b5d5d5a3f6aefd1bbcdbc037cf118549ab5b617432ff4f7b2a622013",
+      "lastModified": "2026-03-08T03:03:46.591Z",
+      "articleNumbers": []
     },
     "law-data/mevzuat/tmk.md": {
-      "hash": "a9041f6d4000bff16afd369ada281b0db7bc237b2caa39d4774fb949939b1bce",
-      "lastModified": "2026-03-07T03:26:35.603Z",
-      "articleNumbers": [
-        "1",
-        "2",
-        "8",
-        "9"
-      ]
+      "hash": "89b03eb2a6afbb80bc7e1a60fbed13da36a154df92493dfa7c1bc9586811c5f4",
+      "lastModified": "2026-03-08T03:03:46.604Z",
+      "articleNumbers": []
     },
     "law-data/mevzuat/tbk.md": {
-      "hash": "6257789f1fcf06638a8250a1731ca1afcb0288a4f418b9cd3187b51479dd6649",
-      "lastModified": "2026-03-07T03:26:42.414Z",
-      "articleNumbers": [
-        "1",
-        "5",
-        "77",
-        "420"
-      ]
+      "hash": "a1d73d9b840579c812e3e20c3c741965608dd260b6bddf0f8bf254d1fbee700d",
+      "lastModified": "2026-03-08T03:03:46.601Z",
+      "articleNumbers": []
     },
     "law-data/mevzuat/idare.md": {
-      "hash": "9492de0c3431eb5c218d4834e8e08a47ef4f22de79815a64e57372b4604377b0",
-      "lastModified": "2026-03-07T03:26:54.404Z",
+      "hash": "a974fda4c0fdbed2c2cb1ea5ef1c3e27546f8d02c17edda390628bf4f6dd3028",
+      "lastModified": "2026-03-07T04:23:55.109Z",
       "articleNumbers": []
     }
   },
@@ -159,6 +134,104 @@
       "filesChanged": [],
       "inputAmendments": 1,
       "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-08T03:23:56.691Z",
+      "schedule": "full",
+      "amendmentsDetected": [
+        {
+          "file": "law-data/mevzuat/anayasa.md",
+          "lawName": "Türkiye Cumhuriyeti Anayasası (2709)",
+          "type": "articles_removed",
+          "articlesRemoved": [
+            "1",
+            "2",
+            "4",
+            "10",
+            "13",
+            "35",
+            "36"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tck.md",
+          "lawName": "Türk Ceza Kanunu (5237)",
+          "type": "articles_removed",
+          "articlesRemoved": [
+            "1",
+            "20",
+            "21",
+            "22",
+            "26",
+            "38"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tmk.md",
+          "lawName": "Türk Medeni Kanunu (4721)",
+          "type": "articles_removed",
+          "articlesRemoved": [
+            "1",
+            "2",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/tbk.md",
+          "lawName": "Türk Borçlar Kanunu (6098)",
+          "type": "articles_removed",
+          "articlesRemoved": [
+            "1",
+            "5",
+            "77",
+            "420"
+          ]
+        },
+        {
+          "file": "law-data/mevzuat/idare.md",
+          "lawName": "İdare Hukuku",
+          "type": "changed",
+          "articlesPossiblyChanged": []
+        }
+      ],
+      "decisionsAdded": 1,
+      "filesChanged": [
+        "law-data/mevzuat/anayasa.md",
+        "law-data/mevzuat/tck.md",
+        "law-data/mevzuat/tmk.md",
+        "law-data/mevzuat/tbk.md",
+        "law-data/mevzuat/idare.md"
+      ],
+      "inputAmendments": 16,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-08T03:24:49.682Z",
+      "schedule": "full",
+      "amendmentsDetected": [],
+      "decisionsAdded": 1,
+      "filesChanged": [],
+      "inputAmendments": 16,
+      "inputDecisions": 1
+    },
+    {
+      "at": "2026-03-08T03:26:17.937Z",
+      "schedule": "full",
+      "amendmentsDetected": [],
+      "decisionsAdded": 0,
+      "filesChanged": [],
+      "inputAmendments": 15,
+      "inputDecisions": 0
+    },
+    {
+      "at": "2026-03-08T03:30:51.493Z",
+      "schedule": "full",
+      "amendmentsDetected": [],
+      "decisionsAdded": 0,
+      "filesChanged": [],
+      "inputAmendments": 15,
+      "inputDecisions": 0
     }
   ]
 }
