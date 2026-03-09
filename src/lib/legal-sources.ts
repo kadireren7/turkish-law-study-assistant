@@ -99,7 +99,7 @@ export const OFFICIAL_LEGISLATION_URLS = {
   resmigazete: 'https://www.resmigazete.gov.tr/',
 } as const
 
-/** Mevzuat numarası ve yerel dosya eşlemesi – otomatik veri çekme (fetch-mevzuat) için. */
+/** Mevzuat numarası ve yerel dosya eşlemesi – otomatik veri çekme (fetch-mevzuat) için. Tüm maddeler mevzuat.gov.tr'den çekilir. */
 export const MEVZUAT_FETCH_LAWS = [
   { no: 2709, file: 'anayasa.md', label: 'Türkiye Cumhuriyeti Anayasası', legalArea: 'Anayasa Hukuku' },
   { no: 5237, file: 'tck.md', label: 'Türk Ceza Kanunu', legalArea: 'Ceza Hukuku' },
@@ -107,4 +107,7 @@ export const MEVZUAT_FETCH_LAWS = [
   { no: 6098, file: 'tbk.md', label: 'Türk Borçlar Kanunu', legalArea: 'Borçlar Hukuku' },
   { no: 5271, file: 'cmk.md', label: 'Ceza Muhakemesi Kanunu', legalArea: 'Ceza Muhakemesi Hukuku' },
   { no: 6100, file: 'hmk.md', label: 'Hukuk Muhakemeleri Kanunu', legalArea: 'Hukuk Muhakemeleri Hukuku' },
+  { no: 2004, file: 'iik.md', label: 'İcra ve İflas Kanunu', legalArea: 'İcra ve İflas Hukuku' },
+  { no: 6102, file: 'ttk.md', label: 'Türk Ticaret Kanunu', legalArea: 'Ticaret Hukuku' },
+  { no: 5326, file: 'kabahatler.md', label: 'Kabahatler Kanunu', legalArea: 'Kabahatler Hukuku' },
 ] as const

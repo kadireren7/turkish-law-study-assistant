@@ -1,14 +1,14 @@
 {
-  "lastRun": "2026-03-08T03:30:51.493Z",
+  "lastRun": "2026-03-09T17:13:14.595Z",
   "previousSnapshot": {
     "law-data/mevzuat/anayasa.md": {
-      "hash": "10d41745eb09aff9cb1fe15fe0d7e447cff8f9b937923308bec31ed20818d1d1",
-      "lastModified": "2026-03-08T03:03:46.570Z",
+      "hash": "a712c8d9c522c806628b90c71ad2371cc167c03ef3b8114e79d101235a3078bc",
+      "lastModified": "2026-03-09T16:10:43.005Z",
       "articleNumbers": []
     },
     "law-data/mevzuat/tck.md": {
-      "hash": "eeb57d19b5d5d5a3f6aefd1bbcdbc037cf118549ab5b617432ff4f7b2a622013",
-      "lastModified": "2026-03-08T03:03:46.591Z",
+      "hash": "347860119899f102091450d425398a417c856942beeab656b638a06b3f281d74",
+      "lastModified": "2026-03-09T16:25:57.799Z",
       "articleNumbers": []
     },
     "law-data/mevzuat/tmk.md": {
@@ -230,6 +230,31 @@
       "amendmentsDetected": [],
       "decisionsAdded": 0,
       "filesChanged": [],
+      "inputAmendments": 15,
+      "inputDecisions": 0
+    },
+    {
+      "at": "2026-03-09T17:13:14.595Z",
+      "schedule": "full",
+      "amendmentsDetected": [
+        {
+          "file": "law-data/mevzuat/anayasa.md",
+          "lawName": "Türkiye Cumhuriyeti Anayasası (2709)",
+          "type": "changed",
+          "articlesPossiblyChanged": []
+        },
+        {
+          "file": "law-data/mevzuat/tck.md",
+          "lawName": "Türk Ceza Kanunu (5237)",
+          "type": "changed",
+          "articlesPossiblyChanged": []
+        }
+      ],
+      "decisionsAdded": 0,
+      "filesChanged": [
+        "law-data/mevzuat/anayasa.md",
+        "law-data/mevzuat/tck.md"
+      ],
       "inputAmendments": 15,
       "inputDecisions": 0
     }

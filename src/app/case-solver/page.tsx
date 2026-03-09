@@ -1,6 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+/**
+ * Olay Analizi – tek istek, tek sonuç.
+ * Çift çıktı önlemi: (1) submitInFlightRef ile aynı anda yalnızca bir istek.
+ * (2) requestIdRef ile gelen yanıt yalnızca "en güncel" isteğe aitse state güncellenir; eski yanıtlar yok sayılır.
+ */
+
+import { useState, useRef } from 'react'
 import { analyzeCase, type CaseAnalysisResult } from '@/lib/api'
 import { ConfidenceBadge } from '@/components/ConfidenceBadge'
 import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/ExplanationModeSwitcher'
@@ -25,6 +31,23 @@ const SECTIONS = [
   { title: 'Kullanılan kaynak', sub: '', pattern: /KULLANILAN\s*KAYNAK\s*:?\s*/i },
 ] as const
 
+/** Olay özeti / Genel olay özeti gibi tekrarları tek bölümde birleştir. */
+function deduplicateSections(sections: { title: string; sub: string; content: string }[]): { title: string; sub: string; content: string }[] {
+  const seen = new Set<string>()
+  const out: { title: string; sub: string; content: string }[] = []
+  const normalize = (s: string) => s.replace(/\s+/g, ' ').trim().slice(0, 80)
+  for (const s of sections) {
+    const key = s.title.toLowerCase().replace(/\s+/g, '_')
+    const contentKey = normalize(s.content)
+    if (key === 'olay_özeti' && seen.has('genel_olay_özeti')) continue
+    if (key === 'genel_olay_özeti') seen.add('genel_olay_özeti')
+    if (key === 'olay_özeti') seen.add('olay_özeti')
+    if (contentKey && out.some((o) => normalize(o.content) === contentKey)) continue
+    out.push(s)
+  }
+  return out
+}
+
 function parseAnalysis(text: string): { title: string; sub: string; content: string }[] {
   const normalized = text.replace(/\*\*/g, '')
   const result: { title: string; sub: string; content: string }[] = []
@@ -41,7 +64,7 @@ function parseAnalysis(text: string): { title: string; sub: string; content: str
     if (content) result.push({ title: current.title, sub: current.sub, content })
   }
   if (result.length === 0) return [{ title: 'Hukuki Analiz', sub: '', content: text }]
-  return result
+  return deduplicateSections(result)
 }
 
 export default function CaseSolverPage() {
@@ -50,22 +73,30 @@ export default function CaseSolverPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [explanationMode, setExplanationMode] = useState<ExplanationMode>('ogrenci')
+  const submitInFlightRef = useRef(false)
+  const requestIdRef = useRef(0)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!caseText.trim() || loading) return
+    if (submitInFlightRef.current) return
+    submitInFlightRef.current = true
+    const requestId = ++requestIdRef.current
     setLoading(true)
     setResult(null)
     setError('')
     try {
       const data = await analyzeCase(caseText.trim(), { explanationMode })
+      if (requestIdRef.current !== requestId) return
       setResult(data)
       recordCaseAnalysis(data.classification?.category)
     } catch (err) {
+      if (requestIdRef.current !== requestId) return
       const msg = err instanceof Error ? err.message : 'Analiz yüklenirken bir hata oluştu.'
       setError(msg)
     } finally {
-      setLoading(false)
+      if (requestIdRef.current === requestId) setLoading(false)
+      submitInFlightRef.current = false
     }
   }
 

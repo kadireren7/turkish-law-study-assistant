@@ -14,7 +14,6 @@ const navItems = [
   { href: '/mini-sozlu', label: 'Mini Sözlü Yoklama', icon: '🎤' },
   { href: '/pratik-coz', label: 'Pratik Çöz', icon: '✏️' },
   { href: '/law-lessons', label: 'Konu Anlatımı', icon: '📖' },
-  { href: '/quiz', label: 'Çoktan Seçmeli Test', icon: '📝' },
   { href: '/flashcards', label: 'Bilgi Kartları', icon: '🃏' },
   { href: '/guncel-gelismeler', label: 'Güncel Gelişmeler', icon: '📌' },
   { href: '/haberler', label: 'Haberler', icon: '📰' },
@@ -107,7 +106,7 @@ export function Sidebar() {
           <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 tracking-tight">Hukuk Çalışma</h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Akıllı hukuk çalışma platformu</p>
         </div>
-        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5" aria-label="Ana menü">
           {navItems.map((item) => (
             <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} onNavigate={closeMobile} />
           ))}

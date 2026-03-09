@@ -76,6 +76,24 @@ Bu proje **OpenAI modelini fine-tune etmez veya eğitmez.** Hazır API kullanır
 
 Bu politika sohbet, madde arama, olay analizi, sınav pratiği ve güncel gelişmeler dahil **tüm** hukuki içerik üretiminde geçerlidir. Madde Ara doğrudan law-data okur; AI kullanan özelliklerde bağlam yine law-data'dan enjekte edilir.
 
+### Tüm maddeleri resmî kaynaktan doldurma
+
+Kanunların **tamamını** (tüm maddeleri) mevzuat.gov.tr’den almak için:
+
+1. **Mevzuat çekimi:** `npm run mevzuat:fetch` — Anayasa, TCK, TMK, TBK, CMK, HMK, İİK, TTK, Kabahatler metinleri mevzuat.gov.tr’den indirilir.
+2. **Madde indeksi:** `npm run madde-index:sync` — Mevzuat markdown’daki her madde `madde-index/*.json` dosyalarına yazılır; Madde Ara tüm maddeleri bulur.
+
+Ayrıntı: `law-data/README.md`.
+
+### Web araması (isteğe bağlı)
+
+Sohbet’te **güncel** veya yerel kaynakta olmayan sorularda yapay zeka **Google benzeri web araması** ile desteklenebilir. Bunun için `.env.local` içinde **Serper** veya **Tavily** API anahtarı tanımlanır:
+
+- `SERPER_API_KEY=...` ([serper.dev](https://serper.dev) – ücretsiz kredi)
+- veya `TAVILY_API_KEY=...` ([tavily.com](https://tavily.com))
+
+Biri tanımlıysa, “güncel”, “son karar”, “internet” gibi ifadeler geçen veya yerel kaynakta eşleşme bulunamayan sorularda web sonuçları modele ek bağlam olarak verilir; yanıtta kaynak belirtilir.
+
 ### Güncel gelişmelerin takibi (update jobs)
 
 Son mevzuat değişiklikleri ve önemli kararlar **güncelleme işleri** ile takip edilir:
@@ -83,7 +101,9 @@ Son mevzuat değişiklikleri ve önemli kararlar **güncelleme işleri** ile tak
 - **Günlük/haftalık scriptler:** `npm run legal:update:daily` (mevzuat), `npm run legal:update:weekly` (karar özetleri) veya tam güncelleme `npm run legal:update`.
 - **Çıktı:** `law-data/guncellemeler/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`. Bu dosyalar "Güncel Hukuk Gelişmeleri" sayfasında ve (uygunsa) sohbet/uyarı metinlerinde kullanılır.
 - **Resmî kaynak vurgusu:** Özetler Resmî Gazete ve mahkeme veritabanlarına atıf yapar; kesin metin için kullanıcı bu kaynaklara yönlendirilir.
-- **Günlük otomatik güncelleme:** Haberler, mevzuat RSS çekimi ve güncel hukuk gelişmeleri tek komutla her gün çalıştırılabilir: `npm run daily:update`. Windows’ta **Görev Zamanlayıcı** ile her gün otomatik yapmak için: “Görev Zamanlayıcı”yı açın → Yeni Görev Oluştur → Tetikleyici: Günlük, saat (örn. 06:00) → Eylem: Program başlat → Program: `scripts\run-daily-update.bat` (proje kökünden tam yol verin). Böylece haberler, mevzuat özetleri ve güncel gelişmeler her gün el ile çalıştırmadan güncellenir.
+- **Tam güncelleme (tek komut):** `npm run daily:update` — mevzuat RSS, güncel mevzuat/karar özetleri ve hukuk haberleri sırayla güncellenir. Çıktı: `law-data/guncellemeler/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`, `law-data/haberler/hukuk-haberleri.json`.
+- **GitHub Actions:** Yalnızca manuel tetikleme. Repo → Actions → "Legal data update" → Run workflow. Değişiklik varsa otomatik commit/push.
+- **Yerel (Windows):** İsteğe bağlı manuel veya Görev Zamanlayıcı ile `scripts\run-daily-update.bat` çalıştırılabilir; detay için `scripts/GUNLUK-GUNCELLEME-WINDOWS.md`.
 
 Detaylar için `law-data/guncellemeler/README.md` ve `src/lib/legal-sources.ts` (kaynak öncelik listesi) kullanılabilir.
 
@@ -134,7 +154,7 @@ Tarayıcıda [http://localhost:3000](http://localhost:3000) açın. Production b
 
 ### Ortam değişkenleri (`.env.local`)
 
-1. Proje kökünde `.env.local` dosyası oluşturun (git’e eklenmez).
+1. Proje kökünde `.env.local` dosyası oluşturun (git’e eklenmez). Örnek için `.env.example` dosyasına bakın.
 2. İsteğe bağlı olarak OpenAI anahtarını ekleyin:
 
    ```
@@ -142,6 +162,7 @@ Tarayıcıda [http://localhost:3000](http://localhost:3000) açın. Production b
    ```
 
    Anahtarı [OpenAI API Keys](https://platform.openai.com/api-keys) sayfasından alabilirsiniz.
+3. **Production’da zorunlu:** Haberler/güncelleme cron endpoint’i (`/api/news-update`) tetiklenmesin diye `CRON_SECRET` tanımlayın. Tanımlı değilse herkes GET/POST ile güncellemeyi tetikleyebilir.
 
 **AI özellikleri isteğe bağlıdır.** `OPENAI_API_KEY` tanımlı değilse Sohbet, Olay Analizi, Sınav Pratiği, Test, Kartlar ve Konu Anlatımı sayfaları API hatası verecektir; **Madde Ara** ise yalnızca `law-data` dosyalarını okuduğu için anahtar olmadan çalışır. Tüm arayüz ve metinler yine Türkçe görünür.
 
@@ -157,7 +178,9 @@ Tarayıcıda [http://localhost:3000](http://localhost:3000) açın. Production b
 2. **Name:** `OPENAI_API_KEY`  
    **Value:** `sk-...` (OpenAI API anahtarınız)  
    **Environment:** Production (ve isterseniz Preview, Development).
-3. Kaydedin. Sonraki deploy’da bu değişken kullanılır.
+3. **Name:** `CRON_SECRET` (production’da önerilir)  
+   **Value:** Güçlü bir rastgele dize; cron tetikleyicileri `Authorization: Bearer <CRON_SECRET>` ile çağrılır.
+4. Kaydedin. Sonraki deploy’da bu değişkenler kullanılır.
 
 Deploy sonrası AI kullanan sayfalar yalnızca `OPENAI_API_KEY` tanımlıysa çalışır; tanımlı değilse ilgili sayfalarda Türkçe hata mesajı gösterilir.
 

@@ -1,0 +1,51 @@
+# Tam güncelleme pipeline: mevzuat RSS, güncel gelişmeler, hukuk haberleri.
+# Yalnızca manuel tetikleme (Run workflow). Zamanlanmış cron yok.
+name: Legal data update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full daily update
+        id: daily
+        run: |
+          echo "::group::Daily update pipeline"
+          npm run daily:update
+          echo "::endgroup::"
+          echo "Pipeline finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add law-data/guncellemeler/ law-data/haberler/ law-data/last-full-update.json 2>/dev/null || true
+          git diff --staged --quiet && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git commit -m "chore(legal): full update – mevzuat, güncel gelişmeler, haberler [skip ci]"
+          git push
+          echo "::notice::Changes committed and pushed."
+
+      - name: No changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "::notice::No file changes; nothing to commit."

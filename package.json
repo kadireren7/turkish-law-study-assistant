@@ -16,8 +16,10 @@
     "news:update": "tsx scripts/update-news.ts --mode=all",
     "news:update:law": "tsx scripts/update-news.ts --mode=law",
     "mevzuat:fetch": "tsx scripts/fetch-mevzuat.ts",
+    "madde-index:sync": "tsx scripts/sync-madde-index.ts",
     "amendments:fetch": "tsx scripts/fetch-amendments-rss.ts",
-    "daily:update": "tsx scripts/daily-update.ts"
+    "daily:update": "tsx scripts/daily-update.ts",
+    "coverage:audit": "tsx scripts/coverage-audit.ts"
   },
   "dependencies": {
     "docx": "^9.5.0",

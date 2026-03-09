@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { CASE_ANALYSIS_SYSTEM_PROMPT } from '@/lib/case-analysis-prompt'
 import { getRetrievalResult } from '@/lib/legal-brain'
 import { getLawDatabaseContext } from '@/lib/law-database'
@@ -15,17 +14,22 @@ import {
   buildEnrichedQueryForRetrieval,
   formatInferenceForPrompt,
 } from '@/lib/fact-to-law-inference'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
+
+  const openai = getOpenAI()
 
   try {
     const body = await request.json() as { caseText?: string; explanationMode?: 'ogrenci' | 'uyap' }
@@ -35,6 +39,8 @@ export async function POST(request: Request) {
     if (!caseText.trim()) {
       return NextResponse.json({ error: 'Vaka metni gerekli' }, { status: 400 })
     }
+    const textCheck = validateTextLength(caseText, LIMITS.caseText, 'Vaka metni')
+    if (!textCheck.ok) return NextResponse.json({ error: textCheck.error }, { status: textCheck.status })
 
     const queryForClassification = caseText.slice(0, 1500)
     const { queryType, confidence: classificationConfidence } = await classifyQuery(queryForClassification, openai)
@@ -89,11 +95,7 @@ export async function POST(request: Request) {
     })
   } catch (e) {
     console.error('Case API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

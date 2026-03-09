@@ -1,38 +1,58 @@
 import path from 'path'
 import fs from 'fs/promises'
 
-const LAW_FILES = ['anayasa.md', 'tck.md', 'tmk.md', 'tbk.md', 'cmk.md', 'hmk.md', 'idare.md'] as const
-const MAX_TOTAL_CHARS = 24000 // leave room for system prompt; smaller = faster
-const EXAM_CONTEXT_MAX_CHARS = 12000 // smaller context for faster exam question generation
+/** Mevzuat files to load; order matters for priority in context. */
+const LAW_FILES = [
+  'anayasa.md',
+  'tck.md',
+  'tmk.md',
+  'tbk.md',
+  'cmk.md',
+  'hmk.md',
+  'iik.md',
+  'ttk.md',
+  'kabahatler.md',
+  'is-kanunu.md',
+  'idari-yargilama-usulu.md',
+  'idare.md',
+] as const
 
-/** In-memory cache for law context to avoid repeated file reads (e.g. multiple questions). */
+const MAX_TOTAL_CHARS = 32000 // room for system prompt and more laws
+const EXAM_CONTEXT_MAX_CHARS = 14000
+
+/** Human-readable labels for mevzuat (do not show raw file names in UI). */
+export const MEVZUAT_DISPLAY_LABELS: Record<string, string> = {
+  'anayasa.md': 'Türkiye Cumhuriyeti Anayasası (2709)',
+  'tck.md': 'Türk Ceza Kanunu (5237)',
+  'tmk.md': 'Türk Medeni Kanunu (4721)',
+  'tbk.md': 'Türk Borçlar Kanunu (6098)',
+  'cmk.md': 'Ceza Muhakemesi Kanunu (5271)',
+  'hmk.md': 'Hukuk Muhakemeleri Kanunu (6100)',
+  'iik.md': 'İcra ve İflas Kanunu (2004)',
+  'ttk.md': 'Türk Ticaret Kanunu (6102)',
+  'kabahatler.md': 'Kabahatler Kanunu (5326)',
+  'is-kanunu.md': 'İş Kanunu (4857)',
+  'idari-yargilama-usulu.md': 'İdari Yargılama Usulü Kanunu (2577)',
+  'idare.md': 'İdare Hukuku',
+}
+
 let cachedContext: string | null = null
 let cachedShortContext: string | null = null
 
 /**
- * Loads all law-data markdown files and returns a single string for AI context.
- * Uses in-memory cache to reduce file I/O across requests.
- * Used by chat, case, exam-practice, lesson, quiz, flashcards APIs.
+ * Loads law-data mevzuat and returns a single string for AI context.
+ * Uses in-memory cache. Used by chat, case, exam-practice, lesson, quiz, flashcards.
  */
 export async function getLawDatabaseContext(): Promise<string> {
   if (cachedContext) return cachedContext
   const baseDir = path.join(process.cwd(), 'law-data', 'mevzuat')
   const parts: string[] = []
-  const fileLabels: Record<string, string> = {
-    'anayasa.md': 'ANAYASA',
-    'tck.md': 'TCK',
-    'tmk.md': 'TMK',
-    'tbk.md': 'TBK',
-    'cmk.md': 'CMK',
-    'hmk.md': 'HMK',
-    'idare.md': 'İDARE HUKUKU',
-  }
 
   for (const file of LAW_FILES) {
     try {
       const filePath = path.join(baseDir, file)
       const content = await fs.readFile(filePath, 'utf-8')
-      const name = fileLabels[file] ?? file.replace('.md', '').toUpperCase()
+      const name = MEVZUAT_DISPLAY_LABELS[file] ?? file.replace('.md', '').toUpperCase()
       parts.push(`## ${name}\n${content}`)
     } catch (e) {
       console.warn(`law-data: could not read ${file}`, e)

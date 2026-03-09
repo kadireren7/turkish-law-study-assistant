@@ -6,7 +6,6 @@
  * Returns: { content: string }
  */
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getLessonSystemPrompt } from '@/lib/lesson-prompt'
 import { getRetrievalResult } from '@/lib/legal-brain'
 import { getLawDatabaseContext } from '@/lib/law-database'
@@ -16,17 +15,23 @@ import { classifyQuery } from '@/lib/query-classifier'
 import { confidenceFromRetrieval } from '@/lib/confidence'
 import { TARTISMALI_KONU_LESSON_INSTRUCTION } from '@/lib/viewpoints-prompt'
 import { IRAC_TEMPLATE, LEGAL_REASONING_NO_FABRICATION } from '@/lib/legal-reasoning'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
+import { searchWeb, formatWebSearchContext, isWebSearchAvailable } from '@/lib/web-search'
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
+
+  const openai = getOpenAI()
 
   try {
     const body = await request.json() as { subject?: string; topic?: string; explanationMode?: 'ogrenci' | 'uyap' }
@@ -40,13 +45,23 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+    const subjectCheck = validateTextLength(subject, LIMITS.lessonSubject, 'Ders alanı')
+    if (!subjectCheck.ok) return NextResponse.json({ error: subjectCheck.error }, { status: subjectCheck.status })
+    const topicCheck = validateTextLength(topic, LIMITS.lessonTopic, 'Konu')
+    if (!topicCheck.ok) return NextResponse.json({ error: topicCheck.error }, { status: topicCheck.status })
 
     const query = `${subject} ${topic}`
     const { queryType, confidence: classificationConfidence } = await classifyQuery(query, openai)
     const retrieval = await getRetrievalResult(query, openai, 6, { queryType })
-    const lawContext = retrieval.lowConfidence || retrieval.context.length < 200
+    let lawContext = retrieval.lowConfidence || retrieval.context.length < 200
       ? await getLawDatabaseContext()
       : retrieval.context
+    if (isWebSearchAvailable()) {
+      const webResults = await searchWeb(query)
+      if (webResults.length > 0) {
+        lawContext = lawContext + '\n\n---\n\n' + formatWebSearchContext(webResults)
+      }
+    }
     const systemPrompt = getLessonSystemPrompt(subject)
     let sourceBlock = ''
     if (!retrieval.lowConfidence && retrieval.sources.length > 0) {
@@ -92,11 +107,7 @@ export async function POST(request: Request) {
     })
   } catch (e) {
     console.error('Lesson API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

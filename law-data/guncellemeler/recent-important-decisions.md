@@ -1,7 +1,7 @@
 ---
 source: "Yargıtay / AYM karar veritabanları (update-legal-data script)"
-date: "2026-03-08"
-last_checked: "2026-03-08"
+date: "2026-03-09"
+last_checked: "2026-03-09"
 legal_area: "Genel"
 confidence: "medium"
 ---

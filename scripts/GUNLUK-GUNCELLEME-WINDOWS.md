@@ -1,6 +1,6 @@
-# Windows'ta her gün otomatik güncelleme
+# Windows'ta güncelleme (manuel veya zamanlanmış)
 
-Haberler, mevzuat RSS çekimi ve güncel hukuk gelişmeleri her gün otomatik çalışsın istiyorsanız Windows **Görev Zamanlayıcı** ile aşağıdakileri yapın.
+Tam güncelleme pipeline'ı (mevzuat RSS, güncel gelişmeler, hukuk haberleri) Windows'ta **manuel** çalıştırabilir veya **Görev Zamanlayıcı** ile günlük otomatik yapabilirsiniz. GitHub Actions yalnızca manuel tetiklenir; yerel Windows ayarı bundan bağımsızdır.
 
 ## 1. Tek seferde test
 

@@ -1,7 +1,7 @@
 ---
 source: "Resmî Gazete / Mevzuat takip (update-legal-data script)"
-date: "2026-03-08"
-last_checked: "2026-03-08"
+date: "2026-03-09"
+last_checked: "2026-03-09"
 legal_area: "Genel"
 confidence: "medium"
 ---
@@ -20,7 +20,25 @@ Bu dosya, yerel mevzuat dosyalarındaki değişiklikler ve manuel eklenen Resmî
 
 ## Yerel mevzuat dosyası değişiklikleri
 
+### Türkiye Cumhuriyeti Anayasası (2709)
+- **Kaynak:** Yerel mevzuat dosyası güncellendi (hash değişikliği).
+
+### Türk Ceza Kanunu (5237)
+- **Kaynak:** Yerel mevzuat dosyası güncellendi (hash değişikliği).
+
 ## Resmî Gazete / manuel eklenen değişiklikler
+
+### Ticaret Bakanlığı İhracat Süreçleri ve Devlet Destekleri Eğitim Programı - 24-25-26 Mart 2026 – 2026-03-09
+- **Özet:** 09 Mart 2026 Bakanlığımızca 24-25-26 Mart 2026 tarihlerinde “Ticaret Bakanlığı İhracat Süreçleri ve Devlet Destekleri Eğitim Programı” görselde verilen program akışı çerçevesinde çevrimiçi olarak düzenlenecektir. Programa katılım ücretsizdir. Katılım sağlayabilmek için https://egitimbasvuru.ticaret.gov.tr/Ihracat adresindeki bilgilerin doğru ve eksiksiz bir şekilde doldurulması gerekmektedir. Ayrıca aynı e posta adresi ile farklı kişiler tarafından başvuru yapılmaması katılım linki ve Dijital Ba
+- **Kaynak:** Resmî Gazete / Mevzuat.Net, 2026-03-09
+
+### 09 Mart 2026 Tarihli, 33191 Sayılı Resmi Gazete – 2026-03-09
+- **Özet:** 09.03.2026 Tarihli, 33191 sayılı Resmi Gazete' nin içindekiler sayfasını web sitemizde görebilirsiniz. ..
+- **Kaynak:** Resmî Gazete, sayı 33191, 2026-03-09 (Mevzuat.Net özeti)
+
+### 08 Mart 2026 Tarihli, 33190 Sayılı Resmi Gazete – 2026-03-09
+- **Özet:** 08.03.2026 Tarihli, 33190 sayılı Resmi Gazete' nin içindekiler sayfasını web sitemizde görebilirsiniz. ..
+- **Kaynak:** Resmî Gazete, sayı 33190, 2026-03-09 (Mevzuat.Net özeti)
 
 ### 3102.10 tarife pozisyonunda sınıflandırılan Üre ithalatında gümrük vergisi %0 oldu. – 2026-03-07
 - **Özet:** İthalat Rejim Kararı ekli II sayılı listede yer alan 31.FASIL başlıklı tabloda bulunan 3102.10.12.00.00, 3102.10.15.00.00, 3102.10.19.00.00 ve 3102.10.12.00.00 satırlara eklenen dipnotla Üre ithalatında gümrük vergisi %0 oldu...
@@ -69,18 +87,6 @@ Bu dosya, yerel mevzuat dosyalarındaki değişiklikler ve manuel eklenen Resmî
 ### Akaryakıtta ÖTV tutarlarının uluslararası petrol fiyatları ve döviz kurlarındaki değişimlere göre düzenleme yapıldı. – 2026-03-05
 - **Özet:** 4760 sayılı Özel Tüketim Vergisi Kanununa ekli (I) sayılı listenin (A) cetvelinde yer alan benzin, motorin ve LPG de ÖTV tutarlarının uluslararası petrol fiyatları ve döviz kurlarındaki değişimlere göre düzenleme yapıldı; bu kapsamında rafineri çıkış fiyatlarındaki artışlarda ÖTV tutarı artışın yüzde 75 ine kadar düşürülebilecek, fiyatlardaki düşüşlerde ise aynı oranda artırılabilecek...
 - **Kaynak:** Resmî Gazete / Mevzuat.Net, 2026-03-05
-
-### 05 Mart 2026 Tarihli, 33187 Sayılı Resmi Gazete – 2026-03-05
-- **Özet:** 05.03.2026 Tarihli, 33187 sayılı Resmi Gazete' nin içindekiler sayfasını web sitemizde görebilirsiniz. ..
-- **Kaynak:** Resmî Gazete, sayı 33187, 2026-03-05 (Mevzuat.Net özeti)
-
-### AB Mevzuatı: Endonezya menşeli biyodizel ithalatına kesin bir telafi edici vergi uygulandı. – 2026-03-04
-- **Özet:** 4.3.2026 tarihli AB Resmi Gazetesi'nde yayımlanan (AB) 2016/1037 sayılı Komisyon Uygulama Yönetmeliği ile; Endonezya menşeli, CN kodları ex 1516 20 98 (TARIC kodları 1516 20 98 21, 1516 20 98 29 ve 1516 20 98 33), ex 1518 00 91 (TARIC kodları 1518 00 91 21, 1518 00 91 29 ve 1518 00 91 33), ex 1518 00 95 (TARIC kodları 1518 00 95 21, 1518 00 95 33) 1518 00 99 (TARIC kodları 1518 00 99 21, 1518 00 99 29 ve 1518 00 99 33), ex 2710 19 11 (TARIC kodu 2710 19 11 10), ex 2710 19 15 (TARIC kodu 2710 19 
-- **Kaynak:** Resmî Gazete / Mevzuat.Net, 2026-03-04
-
-### 04 Mart 2026 Tarihli, 33186 Sayılı Resmi Gazete – 2026-03-04
-- **Özet:** 04.03.2026 Tarihli, 33186 sayılı Resmi Gazete' nin içindekiler sayfasını web sitemizde görebilirsiniz. ..
-- **Kaynak:** Resmî Gazete, sayı 33186, 2026-03-04 (Mevzuat.Net özeti)
 
 ---
 

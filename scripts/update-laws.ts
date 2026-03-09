@@ -64,12 +64,16 @@ function sha256(text: string): string {
 
 function extractArticleNumbers(content: string): string[] {
   const numbers: string[] = []
-  const regex = /^###\s+Madde\s+(\d+)\s*[–\-]/gm
-  let m: RegExpExecArray | null
-  while ((m = regex.exec(content)) !== null) numbers.push(m[1])
-  const regex2 = /^###\s+Madde\s+(\d+)\s*$/gm
-  while ((m = regex2.exec(content)) !== null) {
-    if (!numbers.includes(m[1])) numbers.push(m[1])
+  const patterns = [
+    /^##\s+Madde\s+(\d+)\s*[–\-:\s]/gm,
+    /^###\s+Madde\s+(\d+)\s*[–\-]/gm,
+    /^###\s+Madde\s+(\d+)\s*$/gm,
+  ]
+  for (const regex of patterns) {
+    let m: RegExpExecArray | null
+    while ((m = regex.exec(content)) !== null) {
+      if (!numbers.includes(m[1])) numbers.push(m[1])
+    }
   }
   return [...new Set(numbers)].sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
 }

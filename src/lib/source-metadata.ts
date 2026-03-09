@@ -52,8 +52,8 @@ const PATH_TO_LAW_NAME: Record<string, string> = {
   'konu-notlari/ticaret-hukuku-giris.md': 'Ticaret Hukuku Giriş (konu notları)',
   'konu-notlari/is-hukuku-giris.md': 'İş Hukuku Giriş (konu notları)',
   'konu-notlari/idare-hukuku-giris.md': 'İdare Hukuku Giriş (konu notları)',
-  'guncellemeler/recent-amendments.md': 'Güncel Gelişme: Resmî Gazete / Mevzuat Değişiklikleri',
-  'guncellemeler/recent-important-decisions.md': 'Güncel Gelişme: Yargıtay / AYM Karar Özetleri',
+  'guncellemeler/recent-amendments.md': 'Son mevzuat değişiklikleri özeti',
+  'guncellemeler/recent-important-decisions.md': 'Son önemli kararlar özeti (Yargıtay / AYM)',
 }
 
 /** Human-readable labels for konu-notlari (topic notes). Used when path not in map. */
@@ -103,9 +103,9 @@ export function lawNameFromPath(relativePath: string): string {
     return 'Konu Notu: ' + (KONU_NOTA_TITLES[base] ?? base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
   }
   if (normalized.includes('guncellemeler/')) {
-    if (normalized.includes('amendment') || normalized.includes('degisiklik')) return 'Güncel Gelişme: Mevzuat Değişiklikleri'
-    if (normalized.includes('decision') || normalized.includes('karar')) return 'Güncel Gelişme: Karar Özetleri'
-    return 'Güncel Gelişme: Resmî Gazete / Karar Özetleri'
+    if (normalized.includes('amendment') || normalized.includes('recent-amendments')) return 'Son mevzuat değişiklikleri özeti'
+    if (normalized.includes('decision') || normalized.includes('recent-important-decisions')) return 'Son önemli kararlar özeti (Yargıtay / AYM)'
+    return 'Güncel hukuk gelişmeleri'
   }
   if (normalized.includes('mevzuat/')) return 'Mevzuat: ' + (base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
   if (normalized.includes('madde-index/')) return 'Madde metni: ' + (base.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))

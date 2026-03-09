@@ -1,6 +1,20 @@
 [
-  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "1", "title": "Amaç ve kapsam", "text": "Bu Kanun, hukuk mahkemelerinde görülen davalarda uygulanacak usul kurallarını düzenler.", "keywords": ["hukuk muhakemesi", "dava", "usul"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
-  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "24", "title": "Davacı ve davalı", "text": "Dava, davacı tarafından davalı aleyhine açılır. Taraflar, iddia ve savunmalarını usulüne uygun şekilde ileri sürer.", "keywords": ["davacı", "davalı", "dava"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
-  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "189", "title": "İspat yükü", "text": "İspat yükü, iddia eden tarafa aittir. Kanunda özel düzenleme varsa ispat yükü değişebilir.", "keywords": ["ispat yükü", "iddia", "delil"], "legalArea": "Hukuk Muhakemeleri Hukuku"},
-  {"lawCode": "HMK", "lawName": "Hukuk Muhakemeleri Kanunu", "articleNumber": "293", "title": "Karar", "text": "Hâkim, toplanan delillere ve yargılamanın sonucuna göre hüküm kurar. Hüküm, gerekçeli yazılır.", "keywords": ["hüküm", "gerekçe", "karar"], "legalArea": "Hukuk Muhakemeleri Hukuku"}
+  {
+    "lawCode": "HMK",
+    "lawName": "Hukuk Muhakemeleri Kanunu",
+    "articleNumber": "1",
+    "title": "",
+    "text": "Mevzuat Bilgi Sistemi T.C. CUMHURBAŞKANLIĞI MEVZUAT BİLGİ SİSTEMİ Mevzuat Türü Kanunlar Kanun Hükmünde Kararnameler Cumhurbaşkanlığı Kararnameleri Tüzükler Cumhurbaşkanı Kararları Cumhurbaşkanlığı Genelgeleri Yönetmelikler Tebliğler T.C. Anayasası Mülga Mevzuat Kanunlar Fihristi Cumhurbaşkanlığı Kararnameleri Fihristi Yayınlar CUMHURBA&#x15E;KANLI&#x11E;I KARARNAMELER&#x130; K&#xDC;LL&#x130;YATI 205 KANUN TAHK&#x130;M K&#x130;TABI TAHK&#x130;MDE GU&#x308;NCEL SORUNLAR V-VI TAHK&#x130;MDE G&#xDC;NCEL GEL&#x130;&#x15E;MELER SEM&#x130;NER K&#x130;TABI T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-I T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-II TAHK&#x130;M SEMPOZYUM K&#x130;TABI Oturum Aç Favorilerim Üye Bilgileri Üye Bilgileri Çıkış MEVZUAT BİLGİ SİSTEMİ Şifre Değiştirme &times; Güncelle Üyelik Bilgileri &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z Mesle&#x11F;iniz Güncelle Anasayfa Resmî Gazete Tarihi: 04.02.2011 Resmî Gazete Sayısı: 27836 * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. &times; Kapat Hakkımızda Yardım Resmî Gazete Faydalı Linkler T.C. Cumhurbaşkanlığı Külliyesi Hukuk ve Mevzuat Genel Müdürlüğü 06560 Beştepe / Ankara Bize Ulaşın T.C. Cumhurbaşkanlığı Genel Sekreterliği Hukuk ve Mevzuat Genel Müdürlüğü 2020 Tüm Hakları Saklıdır. Gizlilik, Kullanım ve Telif Hakları bildiriminde belirtilen kurallar çerçevesinde hizmet sunulmaktadır. Bize Ulaşın &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z E-Posta Adresiniz Mesle&#x11F;iniz Konu Seçiniz Mevzuat Hakk&#x131;nda &#x130;nternet Sitesi Hakk&#x131;nda Di&#x11F;er Mesaj Gönder &times; Giriş Yeni Üyelik Şifremi Unuttum Yeni Üyelik × Kaydet Kaydı tamamladığınızda e-posta adresinize aktivasyon için mesaj gönderilecektir. Aktivasyon işlemi sonrası sisteme giriş yapabilirsiniz. Şifremi Unuttum × Şifrenizi sıfırlamak için lütfen sistemde kayıtlı e-posta adresinizi giriniz. Gönder Şifremi Unuttum × Güncelle Tamam\n\n madde, kanun\n\n Hukuk Muhakemeleri Hukuku",
+    "keywords": [
+      "mevzuat",
+      "bilgi",
+      "sistemi",
+      "cumhurbaşkanliği",
+      "lgi",
+      "stemi",
+      "türü",
+      "kanunlar"
+    ],
+    "legalArea": "Hukuk Muhakemeleri Hukuku"
+  }
 ]

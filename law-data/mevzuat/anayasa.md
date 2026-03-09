@@ -1,30 +1,65 @@
 ---
-source: "Mevzuat Bilgi Sistemi (mevzuat.gov.tr) - otomatik cekim"
-date: "2026-03-07"
-last_checked: "2026-03-07"
+source: "Resmî Gazete (2709 sayılı Kanun, 09.11.1982)"
+last_checked: "2026-03-08"
 legal_area: "Anayasa Hukuku"
-keywords: "anayasa hukuku mevzuat kanun madde"
+keywords: "anayasa temel haklar devlet"
 confidence: "high"
 ---
 
-# Türkiye Cumhuriyeti Anayasası (2709 sayili)
+# Türkiye Cumhuriyeti Anayasası (2709 sayılı)
 
-**Kanun adi:** Türkiye Cumhuriyeti Anayasası (2709 sayili)
-**Hukuk alani:** Anayasa Hukuku
-**Guncel metin:** mevzuat.gov.tr uzerinden otomatik cekilmistir. Resmi teyit icin https://www.mevzuat.gov.tr/ kontrol ediniz.
-
----
-
-## Madde 1
-
-**Madde metni:**
-Mevzuat Bilgi Sistemi T.C. CUMHURBAŞKANLIĞI MEVZUAT BİLGİ SİSTEMİ Mevzuat Türü Kanunlar Kanun Hükmünde Kararnameler Cumhurbaşkanlığı Kararnameleri Tüzükler Cumhurbaşkanı Kararları Cumhurbaşkanlığı Genelgeleri Yönetmelikler Tebliğler T.C. Anayasası Mülga Mevzuat Kanunlar Fihristi Cumhurbaşkanlığı Kararnameleri Fihristi Yayınlar CUMHURBA&#x15E;KANLI&#x11E;I KARARNAMELER&#x130; K&#xDC;LL&#x130;YATI 205 KANUN TAHK&#x130;M K&#x130;TABI TAHK&#x130;MDE GU&#x308;NCEL SORUNLAR V-VI TAHK&#x130;MDE G&#xDC;NCEL GEL&#x130;&#x15E;MELER SEM&#x130;NER K&#x130;TABI T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-I T.C. RESM&#xCE; GAZETE &#x130;LK 100 SAYI C&#x130;LT-II TAHK&#x130;M SEMPOZYUM K&#x130;TABI Oturum Aç Favorilerim Üye Bilgileri Üye Bilgileri Çıkış MEVZUAT BİLGİ SİSTEMİ Şifre Değiştirme &times; Güncelle Üyelik Bilgileri &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z Mesle&#x11F;iniz Güncelle Anasayfa Resmî Gazete Tarihi: 09.11.1982 Resmî Gazete Sayısı: 17863 * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. * Kanunlar Fihristinde yapılan aramada çıkan Kanunun Resmî Gazete tarihi veya sayısına tıklandığında yayımlandığı günün Resmî Gazetesine gider. Kanunun tüm değişikliklerinin işlendiği güncel metne ulaşılmak istenirse, Mevzuat Türü bölümünün altındaki Kanunlar butonundan arama yapılması gerekmektedir. &times; Kapat Hakkımızda Yardım Resmî Gazete Faydalı Linkler T.C. Cumhurbaşkanlığı Külliyesi Hukuk ve Mevzuat Genel Müdürlüğü 06560 Beştepe / Ankara Bize Ulaşın T.C. Cumhurbaşkanlığı Genel Sekreterliği Hukuk ve Mevzuat Genel Müdürlüğü 2020 Tüm Hakları Saklıdır. Gizlilik, Kullanım ve Telif Hakları bildiriminde belirtilen kurallar çerçevesinde hizmet sunulmaktadır. Bize Ulaşın &times; Ad&#x131;n&#x131;z Soyad&#x131;n&#x131;z E-Posta Adresiniz Mesle&#x11F;iniz Konu Seçiniz Mevzuat Hakk&#x131;nda &#x130;nternet Sitesi Hakk&#x131;nda Di&#x11F;er Mesaj Gönder &times; Giriş Yeni Üyelik Şifremi Unuttum Yeni Üyelik × Kaydet Kaydı tamamladığınızda e-posta adresinize aktivasyon için mesaj gönderilecektir. Aktivasyon işlemi sonrası sisteme giriş yapabilirsiniz. Şifremi Unuttum × Şifrenizi sıfırlamak için lütfen sistemde kayıtlı e-posta adresinizi giriniz. Gönder Şifremi Unuttum × Güncelle Tamam
-
-**Anahtar kelimeler:** madde, kanun
-
-**Hukuk alani:** Anayasa Hukuku
+**Kanun adı:** Türkiye Cumhuriyeti Anayasası (2709 sayılı)  
+**Hukuk alanı:** Anayasa Hukuku  
+**Özet:** 1982 Anayasası; devletin şekli, temel haklar ve ödevler, yasama, yürütme, yargı. Güncel metin için mevzuat.gov.tr ve resmigazete.gov.tr kullanılmalıdır.
 
 ---
 
+## Madde 1 – Devletin şekli
 
-*Son otomatik guncelleme: 2026-03-07. Resmi metin icin mevzuat.gov.tr kullaniniz.*
+Türkiye Devleti bir Cumhuriyettir.
+
+---
+
+## Madde 2 – Cumhuriyetin nitelikleri
+
+Türkiye Cumhuriyeti, toplumun huzuru, millî dayanışma ve adalet anlayışı içinde, insan haklarına saygılı, Atatürk milliyetçiliğine bağlı, başlangıçta belirtilen temel ilkelere dayanan, demokratik, lâik ve sosyal bir hukuk Devletidir.
+
+---
+
+## Madde 3 – Devletin bütünlüğü, resmî dili, bayrağı, millî marşı ve başkenti
+
+Türkiye Devleti, ülkesi ve milletiyle bölünmez bir bütündür. Dili Türkçedir. Bayrağı, şekli kanununda belirtilen, beyaz ay yıldızlı al bayraktır. Millî marşı "İstiklal Marşı"dır. Başkenti Ankara'dır.
+
+---
+
+## Madde 4 – Şeklin değiştirilemezliği
+
+Anayasanın 1 inci maddesindeki Devletin şeklinin Cumhuriyet olduğu hakkındaki hüküm ile 2 nci maddesindeki Cumhuriyetin nitelikleri ve 3 üncü maddesindeki hükümler değiştirilemez ve değiştirilmesi teklif edilemez.
+
+---
+
+## Madde 10 – Kanun önünde eşitlik
+
+Herkes, dil, ırk, renk, cinsiyet, siyasî düşünce, felsefî inanç, din, mezhep ve benzeri sebeplerle ayrım gözetilmeksizin kanun önünde eşittir. Kadınlar ve erkekler eşit haklara sahiptir. Devlet, bu eşitliğin yaşama geçmesini sağlamakla yükümlüdür.
+
+---
+
+## Madde 13 – Temel hak ve hürriyetlerin sınırlanması
+
+Temel hak ve hürriyetler, özlerine dokunulmaksızın yalnızca Anayasanın ilgili maddelerinde belirtilen sebeplere bağlı olarak ve ancak kanunla sınırlanabilir. Bu sınırlamalar Anayasanın sözüne ve ruhuna uygun olamaz.
+
+---
+
+## Madde 35 – Mülkiyet hakkı
+
+Herkes, mülkiyet ve miras haklarına sahiptir. Bu haklar, ancak kamu yararı amacıyla, kanunla sınırlanabilir.
+
+---
+
+## Madde 36 – Hak arama hürriyeti
+
+Herkes, meşru vasıta ve yollardan faydalanmak suretiyle yargı mercileri önünde davacı veya davalı olarak iddia ve savunma ile adil yargılanma hakkına sahiptir.
+
+---
+
+*Güncel metin için Resmî Gazete ve mevzuat.gov.tr kontrol edilmelidir.*

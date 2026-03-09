@@ -6,23 +6,42 @@
  * Professor-style short oral questions; corrects and asks next; uses retrieval for topic.
  */
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getOralExamSystemContent, ORAL_EXAM_TOPICS, type OralExamTopicId } from '@/lib/oral-exam-prompt'
 import { getRetrievalResult } from '@/lib/legal-brain'
 import { getLawDatabaseContext } from '@/lib/law-database'
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+const VALID_TOPICS = new Set<string>(ORAL_EXAM_TOPICS.map((t) => t.id))
 
-const VALID_TOPICS = new Set<string>(ORAL_EXAM_TOPICS.map((t) => t.id));
+/** İlk soru için çeşitli talimatlar; her başlangıçta rastgele biri seçilir, aynı iki soruyla başlamaz. */
+const FIRST_QUESTION_PROMPTS = [
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; bir KAVRAM TANIMI veya unsur sorusu ile başla (örn. X nedir, X’in unsurları nelerdir).',
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; bir AYRIM sorusu ile başla (X ile Y nasıl ayrılır, farkı nedir).',
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; kısa bir UYGULAMA / mini olay sorusu ile başla (şu durumda hangi kural, nasıl sonuç).',
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; bir İLKE veya madde özeti sorusu ile başla (hangi ilke uygulanır, bu madde ne düzenler).',
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; doğru/yanlış veya “bu ifade neden doğru/yanlış” tarzı bir soru ile başla.',
+  'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; konunun farklı bir alt alanından (tanım, ayrım veya kısa uygulama) rastgele bir soru seç ve sor.',
+]
+
+function pickRandomFirstPrompt(): string {
+  const i = Math.floor(Math.random() * FIRST_QUESTION_PROMPTS.length)
+  return FIRST_QUESTION_PROMPTS[i] ?? FIRST_QUESTION_PROMPTS[0]
+}
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
+
+  const openai = getOpenAI()
 
   try {
     const body = (await request.json()) as {
@@ -35,6 +54,15 @@ export async function POST(request: Request) {
     if (!topic || !VALID_TOPICS.has(topic)) {
       return NextResponse.json(
         { error: 'Geçerli bir konu seçin: ceza, medeni, borclar, anayasa, idare, karma' },
+        { status: 400 }
+      )
+    }
+    const topicCheck = validateTextLength(topic, LIMITS.oralExamTopic, 'Konu')
+    if (!topicCheck.ok) return NextResponse.json({ error: topicCheck.error }, { status: topicCheck.status })
+    const totalContentLen = messages.reduce((s, m) => s + (m?.content?.length ?? 0), 0)
+    if (totalContentLen > LIMITS.oralExamMessagesContent) {
+      return NextResponse.json(
+        { error: `Mesajlar toplamı en fazla ${LIMITS.oralExamMessagesContent} karakter olabilir.` },
         { status: 400 }
       )
     }
@@ -58,7 +86,7 @@ export async function POST(request: Request) {
     if (messages.length === 0) {
       openaiMessages.push({
         role: 'user',
-        content: 'Mini sözlü yoklamaya başlayalım. Yalnızca tek bir ilk soru sor; kavram veya kısa uygulama türünde, temel seviyede başla.',
+        content: pickRandomFirstPrompt(),
       })
     } else {
       for (const m of messages.slice(-14)) {
@@ -69,7 +97,7 @@ export async function POST(request: Request) {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: openaiMessages,
-      temperature: 0.35,
+      temperature: 0.5,
       max_tokens: 1024,
     })
 
@@ -81,11 +109,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply })
   } catch (e) {
     console.error('Oral exam API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

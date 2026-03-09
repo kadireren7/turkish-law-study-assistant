@@ -46,4 +46,5 @@ KURALLAR:
 - Madde ve karar uydurma. Sadece aşağıdaki KANUN KAYNAK METİNLERİndeki maddelere atıf yap; kaynakta yoksa belirt.
 - Önemli sorunları atlama; ayrıntıları aşırı parçalama. Ana hukuki meseleleri tespit et.
 - Yanıt tamamen Türkçe. Tek sorunda IRAC, çoklu sorunda her sorun için IRAC sırasını koru.
+- Aynı başlığı veya aynı içeriği iki kez yazma. Tek yanıt: ya A) ya B) yapısını kullan; bölümleri tekrarlama.
 - "Olaydan çıkarılan hukuki yönlendirme" verildiyse: belirtilen dallar, kavramlar ve normları KANUN KAYNAK METİNLERİnde bul; KURAL ve UYGULAMA bölümlerinde kullan. Neden o kuralın bu olaya uygulandığını (olay–kural bağlantısını) öğrenciye kısa açıkla; eğitim değeri için "bu madde bu olayda şu nedenle ilgilidir" ifadesini kullan.`

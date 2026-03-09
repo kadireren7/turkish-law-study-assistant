@@ -2,13 +2,15 @@
  * Shared legal knowledge layer: source-aware retrieval used by Sohbet, Madde Ara,
  * Olay Analizi, Pratik Çöz, Konu Anlatımı, Haberler. All modules use the same
  * retrieval and human-readable source display.
- * Supports query-type-based source routing (mevzuat, konu notları, karar özetleri, güncel gelişmeler).
+ * Classifies query → selects source types → retrieves relevant chunks; for article
+ * questions injects direct madde text first, then combines with topic notes and decision summaries.
  */
 import OpenAI from 'openai'
 import { retrieveForQuery, type RagResult, type ChunkRef, type SourceTierOverrides } from '@/lib/law-rag'
 import { getSourceMetadata, toHumanReadableSourceLabels, isFromGuncellemeler } from '@/lib/source-metadata'
 import type { QueryType } from '@/lib/query-classifier'
 import { getSourceGroupsForQueryType } from '@/lib/source-routing'
+import { parseLawQuery, searchLawArticle } from '@/lib/law-search'
 
 export type RetrievalResult = {
   context: string
@@ -19,6 +21,14 @@ export type RetrievalResult = {
 }
 
 const DEFAULT_TOP_K = 6
+
+/** Top-K by query type: article questions need fewer chunks; olay/tartışmalı benefit from more (article + topic notes + decisions). */
+function getTopKForQueryType(queryType?: QueryType): number {
+  if (!queryType) return DEFAULT_TOP_K
+  if (queryType === 'madde_arama' || queryType === 'mevzuat_sorusu') return 5
+  if (queryType === 'olay_analizi' || queryType === 'tartismali_konu' || queryType === 'karar_analizi') return 8
+  return DEFAULT_TOP_K
+}
 
 /** Source routing: by query type, prioritize mevzuat / konu notları / karar özetleri (guncellemeler) / mixed. */
 const SOURCE_TIER_BY_QUERY_TYPE: Partial<Record<QueryType, SourceTierOverrides>> = {
@@ -33,10 +43,14 @@ const SOURCE_TIER_BY_QUERY_TYPE: Partial<Record<QueryType, SourceTierOverrides>>
   sohbet_genel: { mevzuat: 1, 'madde-index': 2, 'konu-notlari': 3, guncellemeler: 4 },
 }
 
+const RETRIEVAL_ORDER_NOTE = `
+Öncelik sırası: (1) Doğrudan madde metni varsa önce onu kullan; (2) konu notları ve mevzuat parçaları; (3) karar özetleri ve güncel gelişmeler. Yanıtı Türkçe, yapılandırılmış ve sınav odaklı ver.
+`.trim()
+
 /**
- * Single entry point for legal retrieval. Scans local legal data, retrieves
- * relevant content, returns context and human-readable source labels for display.
- * When queryType is provided, applies source routing (prioritize mevzuat / konu notları / karar özetleri / güncel gelişmeler).
+ * Single entry point for legal retrieval. Classifies query → selects source types →
+ * retrieves only relevant legal sources. For article questions, injects direct madde
+ * text first; combines article + topic notes + decision summaries where helpful.
  */
 export async function getRetrievalResult(
   query: string,
@@ -45,19 +59,35 @@ export async function getRetrievalResult(
   options?: { queryType?: QueryType }
 ): Promise<RetrievalResult> {
   const queryType = options?.queryType
+  const effectiveTopK = options?.queryType ? getTopKForQueryType(options.queryType) : topK
   const sourceTierOverrides = queryType ? SOURCE_TIER_BY_QUERY_TYPE[queryType] : undefined
   const allowedSourceGroups = queryType ? getSourceGroupsForQueryType(queryType) : undefined
-  const rag: RagResult = await retrieveForQuery(query, openai, topK, {
+  const rag: RagResult = await retrieveForQuery(query, openai, effectiveTopK, {
     sourceTierOverrides,
     allowedSourceGroups,
   })
+  let context = rag.context
   const sourceLabelsHuman =
     rag.chunksUsed && rag.chunksUsed.length > 0
       ? toHumanReadableSourceLabels(rag.chunksUsed)
       : (await getSourceMetadata(rag.sources)).map((m) => m.lawName)
 
+  // Article-first: for madde/mevzuat questions, inject direct article text so the model always has it
+  if (queryType === 'madde_arama' || queryType === 'mevzuat_sorusu') {
+    const parsed = parseLawQuery(query)
+    if (parsed) {
+      const articleResult = await searchLawArticle(parsed.code, parsed.article)
+      if (articleResult.found && articleResult.maddeMetni) {
+        const header = `${articleResult.lawLabel} Madde ${articleResult.article}${articleResult.maddeBasligi ? ' – ' + articleResult.maddeBasligi : ''}`
+        const block = `[Doğrudan madde metni – öncelikli kaynak]\n${header}\n\n${articleResult.maddeMetni}`
+        context = block + (context ? '\n\n---\n\n' + RETRIEVAL_ORDER_NOTE + '\n\n' + context : '')
+        sourceLabelsHuman.unshift(`${articleResult.lawLabel} m.${articleResult.article} (doğrudan madde)`)
+      }
+    }
+  }
+
   return {
-    context: rag.context,
+    context,
     sources: rag.sources,
     sourceLabelsHuman,
     chunksUsed: rag.chunksUsed ?? [],

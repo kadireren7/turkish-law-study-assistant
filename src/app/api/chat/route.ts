@@ -6,7 +6,6 @@
  * Uses query classification, source routing, and confidence levels. Fully Turkish, student-focused.
  */
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { LAW_ASSISTANT_SYSTEM_PROMPT } from '@/lib/law-assistant-prompt'
 import { buildSystemContentWithSources, NO_LOCAL_SOURCES_INSTRUCTION, EXPLANATION_MODE_INSTRUCTIONS } from '@/lib/source-grounded'
 import { getRetrievalResult, isFromGuncellemeler } from '@/lib/legal-brain'
@@ -23,25 +22,26 @@ import {
   formatInferenceForPrompt,
 } from '@/lib/fact-to-law-inference'
 import { confidenceFromRetrieval, stripConfidenceFromReplyContent, type ConfidenceLevel } from '@/lib/confidence'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError, ERROR_MESSAGES } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
+import { searchWeb, formatWebSearchContext, isWebSearchAvailable } from '@/lib/web-search'
+import { shouldDoWebSearch, isChatOnlyMode } from '@/lib/chat-heuristics'
 
 export type { ConfidenceLevel }
 
-const ERROR_MESSAGES = {
-  missingKey: 'API anahtarı bulunamadı. .env.local dosyasını kontrol edin.',
-  quota: 'OpenAI API kotası aşıldı veya projede kullanılabilir kredi bulunmuyor. Lütfen billing, usage ve API anahtarını kontrol edin.',
-  server: 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.',
-} as const
-
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: ERROR_MESSAGES.missingKey },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
+
+  const openai = getOpenAI()
 
   try {
     const body = await request.json() as { message?: string; messages?: { role: 'user' | 'assistant'; content: string }[]; uyapMode?: boolean; explanationMode?: 'ogrenci' | 'uyap' }
@@ -56,6 +56,10 @@ export async function POST(request: Request) {
     if (messages.length === 0) {
       return NextResponse.json({ error: 'message veya messages dizisi gerekli' }, { status: 400 })
     }
+
+    const lastUserMsg = messages.filter((m) => m.role === 'user').pop()?.content ?? ''
+    const msgCheck = validateTextLength(lastUserMsg, LIMITS.chatMessage, 'Mesaj')
+    if (!msgCheck.ok) return NextResponse.json({ error: msgCheck.error }, { status: msgCheck.status })
 
     // Keep last 10 messages to reduce token count and speed up response
     const MAX_MESSAGES = 10
@@ -74,9 +78,20 @@ export async function POST(request: Request) {
     } else {
       retrieval = await getRetrievalResult(lastUserMessage, openai, 6, { queryType })
     }
-    const lawContext = retrieval.lowConfidence
+    let lawContext = retrieval.lowConfidence
       ? NO_LOCAL_SOURCES_INSTRUCTION
       : retrieval.context
+    let webSearchAdded = false
+    if (isWebSearchAvailable() && shouldDoWebSearch(lastUserMessage, queryType)) {
+      const webResults = await searchWeb(lastUserMessage)
+      if (webResults.length > 0) {
+        const webBlock = formatWebSearchContext(webResults)
+        lawContext = lawContext
+          ? lawContext + '\n\n---\n\n' + webBlock
+          : webBlock
+        webSearchAdded = true
+      }
+    }
     let sourceTransparencyBlock = ''
     let metadata: Awaited<ReturnType<typeof getSourceMetadata>> = []
     if (!retrieval.lowConfidence && retrieval.sources.length > 0) {
@@ -94,6 +109,22 @@ export async function POST(request: Request) {
     if (legalUpdates) systemContent += legalUpdates
     const queryTypeLabel = QUERY_TYPE_LABELS[queryType] ?? queryType
     systemContent += `\n\nSORU SINIFI: ${queryTypeLabel}. Bu sınıfa uygun kaynak önceliği uygulandı.`
+    const chatOnly = isChatOnlyMode(lastUserMessage, queryType)
+    if (chatOnly) {
+      systemContent += `
+
+SOHBET MODU: Kullanıcı selamlaşıyor veya kısa sohbet ediyor. Kısa, samimi, doğal bir karşılık ver (bir iki cümle). Uzun hukuki cevap, madde listesi veya "Kullanılan kaynak" bölümü yazma. Güven düzeyi satırı yazma. Hukukla ilgili bir konu sorarsa yardımcı olabileceğini belirt.`
+    }
+    if (webSearchAdded) {
+      systemContent += `
+
+WEB ARAMASI (ZORUNLU): Yukarıdaki bağlamda "Web araması (2026)" bölümü var. Kullanıcının sorduğu şeyi bu web sonuçlarından araştır, anla ve öyle cevapla. Yanıtın %100 bu sonuçlara ve yerel kaynaklara dayansın; genel bilgiyle madde/karar uydurma. Mevzuat.gov.tr, LEXPERA, Resmî Gazete, orgTR, mahkeme siteleri gibi farklı sitelerden gelen bilgileri birleştir; açıklayıcı ve anlaşılır yaz. "Kullanılan kaynak" bölümünde sadece insan okunabilir kaynak adı yaz (örn. "Türk Ceza Kanunu (5237)", "LEXPERA Mevzuat"); asla dosya yolu (law-data/..., tck.md) veya ham URL yazma.`
+    }
+    if (queryType === 'guncel_gelisme') {
+      systemContent += `
+
+GÜNCEL GELİŞME SORUSU: Yanıtını yukarıdaki "Son mevzuat değişiklikleri özeti", "Son önemli kararlar özeti" ve "Güncel hukuk haberleri" bölümlerine dayandır. Genel model bilgisiyle güncel gelişme uydurma. Kaynakları insan okunabilir şekilde yaz: "Son mevzuat değişiklikleri özeti", "Son önemli kararlar özeti (Yargıtay / AYM)", "Güncel hukuk haberleri", kanun adları (örn. Türk Ceza Kanunu (5237)). Ham dosya yolu veya dosya adı (tck.md, law-data/...) gösterme. "Kullanılan kaynak" bölümünde Son kontrol tarihini belirt.`
+    }
     if (queryType === 'karar_analizi') {
       systemContent += `
 
@@ -132,7 +163,8 @@ KARAR ANALİZİ: Kullanıcı mahkeme kararı veya özeti vermiş olabilir. Yanı
     const confidence = confidenceFromRetrieval(retrieval, queryType)
 
     const warnings = retrieval.sources.length > 0 ? await getFreshnessWarnings(retrieval.sources) : []
-    const sourceLabels = retrieval.sourceLabelsHuman.length > 0 ? retrieval.sourceLabelsHuman : metadata.map((m) => m.lawName)
+    const rawLabels = retrieval.sourceLabelsHuman.length > 0 ? retrieval.sourceLabelsHuman : metadata.map((m) => m.lawName)
+    const sourceLabels = rawLabels.filter((l) => !/law-data|\.md|\.json|[\\/]/.test(l || ''))
     const lastChecked = metadata.length > 0 ? getRetrievalDate() : null
 
     return NextResponse.json({
@@ -148,23 +180,7 @@ KARAR ANALİZİ: Kullanıcı mahkeme kararı veya özeti vermiş olabilir. Yanı
     })
   } catch (e) {
     console.error('Chat API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const rawMessage = (e.message ?? '').toLowerCase()
-      const isQuota =
-        status === 429 ||
-        rawMessage.includes('quota') ||
-        rawMessage.includes('rate limit') ||
-        rawMessage.includes('insufficient_quota') ||
-        rawMessage.includes('billing')
-      if (isQuota) {
-        return NextResponse.json({ error: ERROR_MESSAGES.quota }, { status: 429 })
-      }
-      if (status >= 500 || status === 429) {
-        return NextResponse.json({ error: ERROR_MESSAGES.server }, { status })
-      }
-      return NextResponse.json({ error: ERROR_MESSAGES.server }, { status: status >= 400 ? status : 500 })
-    }
-    return NextResponse.json({ error: ERROR_MESSAGES.server }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

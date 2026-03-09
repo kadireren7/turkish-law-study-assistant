@@ -4,6 +4,7 @@
  * Kullanım: npm run mevzuat:fetch
  * Önce normal fetch denenir; TLS/socket hatası alınırsa Playwright (Chromium) ile tarayıcı üzerinden çekim yapılır.
  * İlk kullanımda (bir kez): npx playwright install chromium
+ * Not: Mevzuat.gov.tr tam çekilemediğinde LEXPERA, orgTR vb. alternatif sitelerden fallback çekim eklenebilir.
  */
 import path from 'path'
 import fs from 'fs/promises'

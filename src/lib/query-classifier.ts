@@ -44,7 +44,7 @@ Kategoriler:
 - olay_analizi: Olay/vaka anlatılmış, hukuki değerlendirme veya çözüm isteniyor.
 - sinav_pratigi: Sınav sorusu üret, pratik yap, soru çöz, değerlendir talepleri.
 - konu_anlatimi: Konu anlat, ders notu, özet, nasıl çalışılır talepleri.
-- guncel_gelisme: Güncel değişiklik, yeni karar, son gelişme, güncelleme.
+- guncel_gelisme: Son dönem gelişmeler, son mevzuat değişiklikleri, yeni karar, AYM/Yargıtay son gelişmeler, güncel hukuk haberleri, kadın soyadı/konu başlığında yeni gelişme var mı gibi sorular.
 - karar_analizi: Mahkeme kararı veya hukuki metin verilmiş; analiz/özet isteniyor veya metin karar gibi.
 - tartismali_konu: Öğretide tartışmalı konu, farklı görüşler, baskın/karşı görüş, doktrin.
 - sohbet_genel: Genel sohbet, çalışma desteği, takip sorusu, net kategoride değil.

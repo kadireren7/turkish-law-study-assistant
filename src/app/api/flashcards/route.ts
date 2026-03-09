@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { FLASHCARDS_SYSTEM_PROMPT } from '@/lib/flashcards-prompt'
 import { getLawDatabaseContext } from '@/lib/law-database'
 import { buildSystemContentWithSources } from '@/lib/source-grounded'
 import { DEFAULT_MEVZUAT_SOURCE_BLOCK } from '@/lib/source-metadata'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
 
 export type Flashcard = { front: string; back: string }
 
@@ -27,19 +26,26 @@ function parseFlashcardsJson(raw: string): Flashcard[] {
 }
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
+
+  const openai = getOpenAI()
 
   try {
     const { topic } = (await request.json()) as { topic?: string }
     if (!topic || typeof topic !== 'string') {
       return NextResponse.json({ error: 'Konu gerekli' }, { status: 400 })
     }
+    const topicCheck = validateTextLength(topic, LIMITS.flashcardsTopic, 'Konu')
+    if (!topicCheck.ok) return NextResponse.json({ error: topicCheck.error }, { status: topicCheck.status })
 
     const lawContext = await getLawDatabaseContext()
     const systemContent = buildSystemContentWithSources(
@@ -71,14 +77,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ cards })
   } catch (e) {
     console.error('Flashcards API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
     if (e instanceof SyntaxError) {
       return NextResponse.json({ error: 'Model yanıtı geçersiz formatta' }, { status: 502 })
     }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

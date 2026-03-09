@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { QUIZ_GENERATOR_SYSTEM_PROMPT } from '@/lib/quiz-prompt'
 import { getLawDatabaseContext } from '@/lib/law-database'
 import { buildSystemContentWithSources } from '@/lib/source-grounded'
 import { DEFAULT_MEVZUAT_SOURCE_BLOCK } from '@/lib/source-metadata'
 import { getQuizVariationHints, buildQuizVariationInstruction } from '@/lib/question-variation'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
 
 export type QuizQuestion = {
   question: string
@@ -42,21 +41,31 @@ function parseQuizJson(raw: string, maxQuestions: number): QuizQuestion[] {
 }
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
 
+  const openai = getOpenAI()
+
   try {
-    const body = (await request.json()) as { topic?: string; count?: number }
-    const { topic, count: requestedCount } = body
+    const body = (await request.json()) as { topic?: string; count?: number; difficulty?: string }
+    const { topic, count: requestedCount, difficulty: difficultyParam } = body
     if (!topic || typeof topic !== 'string') {
       return NextResponse.json({ error: 'Konu gerekli' }, { status: 400 })
     }
+    const topicCheck = validateTextLength(topic, LIMITS.quizTopic, 'Konu')
+    if (!topicCheck.ok) return NextResponse.json({ error: topicCheck.error }, { status: topicCheck.status })
     const count = Math.min(20, Math.max(3, Number(requestedCount) || 5))
+    const difficulty = ['kolay', 'orta', 'zor', 'karisik'].includes(String(difficultyParam).toLowerCase())
+      ? String(difficultyParam).toLowerCase()
+      : 'karisik'
 
     const lawContext = await getLawDatabaseContext()
     const systemContent = buildSystemContentWithSources(
@@ -65,9 +74,18 @@ export async function POST(request: Request) {
       DEFAULT_MEVZUAT_SOURCE_BLOCK
     )
 
+    const difficultyLine =
+      difficulty === 'kolay'
+        ? 'Zorluk: Kolay; temel kavramlar, net sorular.'
+        : difficulty === 'orta'
+          ? 'Zorluk: Orta; birkaç kural veya ayrım gerektirsin.'
+          : difficulty === 'zor'
+            ? 'Zorluk: Zor; tartışmalı noktalar veya birden fazla madde uygulaması.'
+            : 'Zorluk: Karışık; kolay, orta ve zor sorulardan seç.'
+
     const variationHints = getQuizVariationHints()
     const variationBlock = buildQuizVariationInstruction(variationHints, count)
-    const userContent = `Şu hukuk konusu için ${count} çoktan seçmeli soru üret: "${topic}". ${variationBlock} Yanıtını sadece JSON dizisi olarak ver.`
+    const userContent = `Şu hukuk konusu için ${count} çoktan seçmeli soru üret: "${topic}". ${difficultyLine} ${variationBlock} Yanıtını sadece JSON dizisi olarak ver.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -92,14 +110,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ questions })
   } catch (e) {
     console.error('Quiz API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
     if (e instanceof SyntaxError) {
       return NextResponse.json({ error: 'Model yanıtı geçersiz formatta' }, { status: 502 })
     }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

@@ -5,7 +5,6 @@
  * Uses retrieval on question for source-backed feedback and answer confidence.
  */
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { EXAM_EVALUATOR_PROMPT } from '@/lib/exam-practice-prompt'
 import { IRAC_TEMPLATE } from '@/lib/legal-reasoning'
 import { getRetrievalResult } from '@/lib/legal-brain'
@@ -20,8 +19,8 @@ import {
   formatInferenceForPrompt,
 } from '@/lib/fact-to-law-inference'
 import { confidenceFromRetrieval } from '@/lib/confidence'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
+import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
 
 function parseEvaluation(text: string): {
   score: number
@@ -104,25 +103,39 @@ function parseEvaluation(text: string): {
 }
 
 export async function POST(request: Request) {
+  const sizeCheck = validateBodySize(request)
+  if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
+
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY tanımlı değil. .env.local dosyasına ekleyin.' },
+      { error: getMissingKeyMessage() },
       { status: 503 }
     )
   }
 
+  const openai = getOpenAI()
+
   try {
-    const body = await request.json() as { question?: string; userAnswer?: string; topic?: string; explanationMode?: 'ogrenci' | 'uyap' }
+    const body = await request.json() as { question?: string; userAnswer?: string; topic?: string; explanationMode?: 'ogrenci' | 'uyap'; scenario?: string }
     const question = typeof body.question === 'string' ? body.question.trim() : ''
     const userAnswer = typeof body.userAnswer === 'string' ? body.userAnswer.trim() : ''
     const explanationMode = body.explanationMode === 'uyap' ? 'uyap' : 'ogrenci'
+    const scenario = typeof body.scenario === 'string' ? body.scenario.trim() : ''
 
     if (!question || !userAnswer) {
       return NextResponse.json(
         { error: 'question ve userAnswer gerekli' },
         { status: 400 }
       )
+    }
+    const qCheck = validateTextLength(question, LIMITS.examQuestion, 'Soru')
+    if (!qCheck.ok) return NextResponse.json({ error: qCheck.error }, { status: qCheck.status })
+    const aCheck = validateTextLength(userAnswer, LIMITS.examAnswer, 'Cevap')
+    if (!aCheck.ok) return NextResponse.json({ error: aCheck.error }, { status: aCheck.status })
+    if (scenario) {
+      const sCheck = validateTextLength(scenario, LIMITS.examScenario, 'Senaryo')
+      if (!sCheck.ok) return NextResponse.json({ error: sCheck.error }, { status: sCheck.status })
     }
 
     const { queryType, confidence: classificationConfidence } = await classifyQuery(question.slice(0, 600), openai)
@@ -150,7 +163,9 @@ export async function POST(request: Request) {
     if (inferenceBlock) systemContent += '\n\n' + inferenceBlock
     systemContent += '\n\nGeri bildirim (GENEL DEĞERLENDİRME, GÜÇLÜ YÖNLER, EKSİKLER, HUKUKİ HATALAR, ATLANAN NOKTALAR, PUAN, SINAVDA DAHA YÜKSEK NOT İÇİN ÖNERİ, ÖRNEK GÜÇLÜ CEVAP İSKELETİ) yukarıdaki açıklama moduna göre ver: Öğrenci Dostu ise sade ve yapıcı dil; UYAP ise resmî, yapısal ifade. Soruda olaydan çıkarılan dallar ve normlar verildiyse, öğrencinin bu dalları ve normları doğru tespit edip uygulamasını puanlamada artı say; atlamasını eksiklik say.'
 
-    const userContent = `SORU:\n${question}\n\nÖĞRENCİ CEVABI:\n${userAnswer}`
+    const userContent = scenario
+      ? `SENARYO (bağlam):\n${scenario.slice(0, 3000)}\n\nALT SORU:\n${question}\n\nÖĞRENCİ CEVABI:\n${userAnswer}`
+      : `SORU:\n${question}\n\nÖĞRENCİ CEVABI:\n${userAnswer}`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -188,11 +203,7 @@ export async function POST(request: Request) {
     })
   } catch (e) {
     console.error('Exam evaluate API error:', e)
-    if (e instanceof OpenAI.APIError) {
-      const status = e.status ?? 500
-      const message = e.message ?? 'OpenAI API hatası'
-      return NextResponse.json({ error: message }, { status })
-    }
-    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
+    const { status, message } = handleOpenAIError(e)
+    return NextResponse.json({ error: message }, { status })
   }
 }

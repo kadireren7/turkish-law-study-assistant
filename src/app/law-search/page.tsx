@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { searchLawArticle, type LawSearchResult } from '@/lib/api'
+import { searchLawArticle, type LawSearchResult, type WebSearchItem } from '@/lib/api'
+import { ApiLoading } from '@/components/ApiLoading'
+import { ApiErrorBox } from '@/components/ApiErrorBox'
 
 function ResultBlock({ title, children }: { title: string; children: React.ReactNode }) {
   if (!children) return null
@@ -64,28 +66,37 @@ export default function LawSearchPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Örn. TCK 21, TBK 77, TMK 472, CMK 173, Anayasa 10"
+              placeholder="Örn. tbk 2, TBK m.2, Türk Borçlar Kanunu 2, Anayasa 10, TMK 472, cmk 100, hmk 119"
               className="flex-1 rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-3 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-slate-800 shadow-sm transition-colors"
               disabled={loading}
+              aria-label="Madde veya kanun ara"
+              aria-busy={loading}
             />
             <button
               type="submit"
               disabled={loading || !query.trim()}
               className="shrink-0 min-h-[48px] px-6 py-3 rounded-xl bg-teal-600 dark:bg-teal-500 text-white font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+              aria-label={loading ? 'Aranıyor' : 'Ara'}
             >
               {loading ? 'Aranıyor...' : 'Ara'}
             </button>
           </div>
         </form>
 
-        {result && (
-          <div className="max-w-2xl mx-auto mt-8 space-y-4 animate-fade-in-up">
-            {result.message && !result.found && (
-              <div className="p-4 rounded-xl text-sm bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700/50">
-                {result.message}
-              </div>
-            )}
+        {loading && (
+          <div className="max-w-2xl mx-auto mt-8">
+            <ApiLoading message="Madde aranıyor…" />
+          </div>
+        )}
 
+        {result && !loading && (
+          <div className="max-w-2xl mx-auto mt-8 space-y-4 animate-fade-in-up">
+            {result.message && !result.found && !result.webResults?.length && (
+              <ApiErrorBox
+                message={result.message}
+                onRetry={() => setResult(null)}
+              />
+            )}
             {result.found && (
               <>
                 {result.maddeBasligi != null && (
@@ -111,14 +122,47 @@ export default function LawSearchPage() {
                     {result.guncellikNotu}
                   </div>
                 )}
+                {result.fromWeb && result.webResults && result.webResults.length > 0 && (
+                  <details className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                    <summary className="text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                      Kaynaklar (isteğe bağlı)
+                    </summary>
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {result.webResults.map((r: WebSearchItem, i: number) => (
+                        <li key={i}>
+                          <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline">
+                            {r.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </>
             )}
 
-            {!result.found && result.lawLabel && result.article > 0 && (
+            {!result.found && result.lawLabel && result.article > 0 && (!result.webResults || result.webResults.length === 0) && (
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm">
                 <p>
                   <strong className="text-slate-700 dark:text-slate-200">{result.lawLabel}</strong> için Madde {result.article} bilgi tabanında yer almıyor. Resmî metin için Resmî Gazete veya mevzuat portallarını kullanın.
                 </p>
+              </div>
+            )}
+
+            {!result.found && result.webResults && result.webResults.length > 0 && (
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-card dark:shadow-card-dark">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  Yerel veritabanında bu madde yok; web kaynaklarından özet şu an derlenemedi. Aşağıdaki linklerden resmî metni kontrol edebilirsiniz.
+                </p>
+                <ul className="space-y-2">
+                  {result.webResults.map((r: WebSearchItem, i: number) => (
+                    <li key={i}>
+                      <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 dark:text-teal-300 hover:underline">
+                        {r.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>

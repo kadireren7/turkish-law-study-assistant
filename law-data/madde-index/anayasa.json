@@ -1,9 +1,144 @@
 [
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "1", "title": "Devletin şekli", "text": "Türkiye Devleti bir Cumhuriyettir.", "keywords": ["anayasa", "cumhuriyet", "devlet şekli"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "2", "title": "Cumhuriyetin nitelikleri", "text": "Türkiye Cumhuriyeti, toplumun huzuru, millî dayanışma ve adalet anlayışı içinde, insan haklarına saygılı, Atatürk milliyetçiliğine bağlı, başlangıçta belirtilen temel ilkelere dayanan, demokratik, lâik ve sosyal bir hukuk Devletidir.", "keywords": ["nitelikler", "demokratik", "laik", "hukuk devleti"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "4", "title": "Şeklin değiştirilemezliği", "text": "Madde 1'deki Devletin şeklinin Cumhuriyet olduğu hakkındaki hüküm ile Madde 2'deki Cumhuriyetin nitelikleri ve Madde 3'teki hükümler değiştirilemez ve değiştirilmesi teklif edilemez.", "keywords": ["değiştirilemez", "anayasa"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "10", "title": "Kanun önünde eşitlik", "text": "Herkes, dil, ırk, renk, cinsiyet, siyasî düşünce, felsefî inanç, din, mezhep ve benzeri sebeplerle ayrım gözetilmeksizin kanun önünde eşittir. Kadınlar ve erkekler eşit haklara sahiptir. Devlet, bu eşitliğin yaşama geçmesini sağlamakla yükümlüdür.", "keywords": ["eşitlik", "ayrım yasağı", "cinsiyet eşitliği"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "13", "title": "Temel hak ve hürriyetlerin sınırlanması", "text": "Temel hak ve hürriyetler, demokratik toplum düzeninin ve lâik Cumhuriyetin gereklerine ve ölçülülük ilkesine aykırı olamaz.", "keywords": ["sınırlama", "ölçülülük", "temel haklar"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "35", "title": "Mülkiyet hakkı", "text": "Herkes, mülkiyet ve miras haklarına sahiptir. Bu haklar, ancak kamu yararı amacıyla, kanunla sınırlanabilir.", "keywords": ["mülkiyet", "miras", "kamu yararı"], "legalArea": "Anayasa Hukuku"},
-  {"lawCode": "ANAYASA", "lawName": "Türkiye Cumhuriyeti Anayasası", "articleNumber": "36", "title": "Hak arama hürriyeti", "text": "Herkes, meşru bütün vasıta ve yollardan faydalanmak suretiyle yargı mercileri önünde davacı veya davalı olarak iddia ve savunma ile adil yargılanma hakkına sahiptir.", "keywords": ["hak arama", "yargı", "adil yargılanma"], "legalArea": "Anayasa Hukuku"}
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "1",
+    "title": "Devletin şekli",
+    "text": "Türkiye Devleti bir Cumhuriyettir.",
+    "keywords": [
+      "devletin",
+      "şekli",
+      "türkiye",
+      "devleti",
+      "bir",
+      "cumhuriyettir"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "2",
+    "title": "Cumhuriyetin nitelikleri",
+    "text": "Türkiye Cumhuriyeti, toplumun huzuru, millî dayanışma ve adalet anlayışı içinde, insan haklarına saygılı, Atatürk milliyetçiliğine bağlı, başlangıçta belirtilen temel ilkelere dayanan, demokratik, lâik ve sosyal bir hukuk Devletidir.",
+    "keywords": [
+      "cumhuriyetin",
+      "nitelikleri",
+      "türkiye",
+      "cumhuriyeti",
+      "toplumun",
+      "huzuru",
+      "mill",
+      "dayanışma"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "3",
+    "title": "Devletin bütünlüğü, resmî dili, bayrağı, millî marşı ve başkenti",
+    "text": "Türkiye Devleti, ülkesi ve milletiyle bölünmez bir bütündür. Dili Türkçedir. Bayrağı, şekli kanununda belirtilen, beyaz ay yıldızlı al bayraktır. Millî marşı \"İstiklal Marşı\"dır. Başkenti Ankara'dır.",
+    "keywords": [
+      "devletin",
+      "bütünlüğü",
+      "resm",
+      "dili",
+      "bayrağı",
+      "mill",
+      "marşı",
+      "başkenti"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "4",
+    "title": "Şeklin değiştirilemezliği",
+    "text": "Anayasanın 1 inci maddesindeki Devletin şeklinin Cumhuriyet olduğu hakkındaki hüküm ile 2 nci maddesindeki Cumhuriyetin nitelikleri ve 3 üncü maddesindeki hükümler değiştirilemez ve değiştirilmesi teklif edilemez.",
+    "keywords": [
+      "şeklin",
+      "değiştirilemezliği",
+      "anayasanın",
+      "inci",
+      "maddesindeki",
+      "devletin",
+      "şeklinin",
+      "cumhuriyet"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "10",
+    "title": "Kanun önünde eşitlik",
+    "text": "Herkes, dil, ırk, renk, cinsiyet, siyasî düşünce, felsefî inanç, din, mezhep ve benzeri sebeplerle ayrım gözetilmeksizin kanun önünde eşittir. Kadınlar ve erkekler eşit haklara sahiptir. Devlet, bu eşitliğin yaşama geçmesini sağlamakla yükümlüdür.",
+    "keywords": [
+      "kanun",
+      "önünde",
+      "eşitlik",
+      "herkes",
+      "dil",
+      "ırk",
+      "renk",
+      "cinsiyet"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "13",
+    "title": "Temel hak ve hürriyetlerin sınırlanması",
+    "text": "Temel hak ve hürriyetler, özlerine dokunulmaksızın yalnızca Anayasanın ilgili maddelerinde belirtilen sebeplere bağlı olarak ve ancak kanunla sınırlanabilir. Bu sınırlamalar Anayasanın sözüne ve ruhuna uygun olamaz.",
+    "keywords": [
+      "temel",
+      "hak",
+      "hürriyetlerin",
+      "sınırlanması",
+      "hürriyetler",
+      "özlerine",
+      "dokunulmaksızın",
+      "yalnızca"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "35",
+    "title": "Mülkiyet hakkı",
+    "text": "Herkes, mülkiyet ve miras haklarına sahiptir. Bu haklar, ancak kamu yararı amacıyla, kanunla sınırlanabilir.",
+    "keywords": [
+      "mülkiyet",
+      "hakkı",
+      "herkes",
+      "miras",
+      "haklarına",
+      "sahiptir",
+      "haklar",
+      "ancak"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  },
+  {
+    "lawCode": "ANAYASA",
+    "lawName": "Türkiye Cumhuriyeti Anayasası",
+    "articleNumber": "36",
+    "title": "Hak arama hürriyeti",
+    "text": "Herkes, meşru vasıta ve yollardan faydalanmak suretiyle yargı mercileri önünde davacı veya davalı olarak iddia ve savunma ile adil yargılanma hakkına sahiptir.",
+    "keywords": [
+      "hak",
+      "arama",
+      "hürriyeti",
+      "herkes",
+      "meşru",
+      "vasıta",
+      "yollardan",
+      "faydalanmak"
+    ],
+    "legalArea": "Anayasa Hukuku"
+  }
 ]

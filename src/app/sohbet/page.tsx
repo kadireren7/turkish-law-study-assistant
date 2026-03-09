@@ -21,9 +21,9 @@ const PLACEHOLDER_INTERVAL_MS = 3500
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-3 animate-fade-in">
+    <div className="flex gap-3 animate-fade-in" role="status" aria-live="polite" aria-label="Yanıt hazırlanıyor">
       <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-500/25 dark:to-emerald-500/25 flex items-center justify-center">
-        <span className="text-lg">⚖️</span>
+        <span className="text-lg" aria-hidden>⚖️</span>
       </div>
       <div className="flex flex-col gap-1">
         <div className="rounded-2xl rounded-tl-md px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5 min-h-[52px]">
@@ -118,15 +118,21 @@ export default function ChatPage() {
           {messages.map((msg, i) => (
             <div key={i}>
               <ChatMessage role={msg.role} content={msg.role === 'assistant' ? stripConfidenceFromReplyContent(msg.content) : msg.content} />
-              {msg.role === 'assistant' && (msg.sourceLabels?.length ?? 0) > 0 && msg.queryType && msg.queryType !== 'sohbet_genel' && (
-                <div className="flex gap-3 mt-1">
-                  <div className="shrink-0 w-9" />
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    <span className="font-medium text-slate-600 dark:text-slate-300">Kullanılan kaynak:</span>{' '}
-                    {msg.sourceLabels!.join(', ')}
+              {msg.role === 'assistant' && (() => {
+                const displayLabels = (msg.sourceLabels ?? []).filter(
+                  (l) => !(l && (l.includes('law-data') || l.endsWith('.md') || l.endsWith('.json')))
+                )
+                if (displayLabels.length === 0 || !msg.queryType || msg.queryType === 'sohbet_genel') return null
+                return (
+                  <div className="flex gap-3 mt-1">
+                    <div className="shrink-0 w-9" />
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <span className="font-medium text-slate-600 dark:text-slate-300">Kullanılan kaynak:</span>{' '}
+                      {displayLabels.join(', ')}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
               {msg.role === 'assistant' && (msg.confidence || msg.lowConfidence) && (
                 <div className="flex gap-3 mt-1">
                   <div className="shrink-0 w-9" />

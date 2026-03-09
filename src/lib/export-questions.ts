@@ -26,6 +26,8 @@ export type PracticeExportMeta = {
   difficulty: string
   date: string
   questions: string[]
+  /** Tek olay çok soru: senaryo metni (yazdırma/PDF’de sorulardan önce gösterilir). */
+  scenario?: string
 }
 
 const PRINT_STYLES = `
@@ -42,7 +44,7 @@ h1{font-size:1.35rem;margin-bottom:0.5rem;color:#0f172a;}
 
 /** Build HTML for practice set (Pratik Çöz / Sınav Pratiği) – PDF via print. */
 export function buildPracticePrintHtml(meta: PracticeExportMeta): string {
-  const { title, topic, questionType, difficulty, date, questions } = meta
+  const { title, topic, questionType, difficulty, date, questions, scenario } = meta
   const metaHtml = [
     `<span><strong>Başlık:</strong> ${escapeHtml(title)}</span>`,
     `<span><strong>Konu:</strong> ${escapeHtml(topic)}</span>`,
@@ -50,6 +52,9 @@ export function buildPracticePrintHtml(meta: PracticeExportMeta): string {
     `<span><strong>Zorluk:</strong> ${escapeHtml(difficulty)}</span>`,
     `<span><strong>Tarih:</strong> ${escapeHtml(date)}</span>`,
   ].join('')
+  const scenarioHtml = scenario
+    ? `<div class="q" style="background:#f1f5f9;padding:1rem;border-radius:0.5rem;margin-bottom:1rem;"><strong>Senaryo</strong><div class="qtext">${escapeHtml(scenario)}</div></div>`
+    : ''
   const questionsHtml = questions
     .map(
       (q, i) =>
@@ -60,6 +65,7 @@ export function buildPracticePrintHtml(meta: PracticeExportMeta): string {
 <style>${PRINT_STYLES}</style></head><body>
 <h1>${escapeHtml(title)}</h1>
 <div class="meta">${metaHtml}</div>
+${scenarioHtml}
 ${questionsHtml}
 </body></html>`
 }

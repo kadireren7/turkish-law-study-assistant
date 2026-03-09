@@ -32,16 +32,19 @@ Mahkemenin konuya yaklaşımı; hangi kurala dayandığı, olgulara nasıl uygul
 5) **DAYANILAN HUKUK KURALLARI (KURAL):**
 Metinde atıf yapılan kanun/madde veya hukuk kuralları. Metinde yoksa "Metinde açık atıf belirtilmemiş" de; madde numarası uydurma.
 
-6) **KARARDAN ÇIKARILABİLECEK DERS:**
+6) **KARARIN ÖNEMİ:**
+Kararın hukuk düzeni veya içtihat açısından önemi; benzer davalara emsal teşkil etme, yorum veya uygulama açısından ne ifade ettiği. Metinde yoksa "Metinde vurgulanmamıştır" de; uydurma.
+
+7) **KARARDAN ÇIKARILABİLECEK DERS:**
 Öğrenci bu karardan ne öğrenmeli? Hangi hukuki ilke veya uygulama bu kararla pekişiyor? Kısa, eğitim odaklı; "bu karar bize şunu gösterir" tarzında.
 
-7) **SINAVDA NASIL KULLANILABİLİR:**
+8) **SINAVDA NASIL KULLANILABİLİR:**
 Öğrenci bu kararı sınav cevabında nasıl kullanabilir; hangi soru tiplerinde atıf yapılabilir; nasıl yazılır (örnek cümle veya not).
 
-8) **FARKLI YORUM İHTİMALİ:**
+9) **FARKLI YORUM İHTİMALİ:**
 Karara ilişkin öğretide veya uygulamada farklı yorum ihtimali varsa kısaca belirt. Yoksa "Metinde vurgulanmamıştır" veya "Belirgin farklı yorum bu metinde ele alınmamıştır" yaz.
 
-9) **KULLANILAN KAYNAK:**
+10) **KULLANILAN KAYNAK:**
 Metin bir karar ise: mahkeme adı; dosya/esas numarası ve tarih yalnızca metinde yazıyorsa yaz, yoksa "Metinde belirtilmemiş". Metin özet veya ikincil kaynaksa kaynağı metne göre belirt. Daire numarası, tarih veya dosya numarası uydurma.
 
 KURALLAR:

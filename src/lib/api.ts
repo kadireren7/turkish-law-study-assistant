@@ -75,13 +75,17 @@ export async function analyzeCase(
   }
 }
 
-export async function generateQuiz(topic: string, count: number = 5): Promise<{
+export async function generateQuiz(
+  topic: string,
+  count: number = 5,
+  options?: { difficulty?: 'kolay' | 'orta' | 'zor' | 'karisik' }
+): Promise<{
   questions: { question: string; options: string[]; correct: string; explanation: string }[]
 }> {
   const res = await fetch(`${API_BASE}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topic, count }),
+    body: JSON.stringify({ topic, count, difficulty: options?.difficulty ?? 'karisik' }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -105,6 +109,8 @@ export async function generateFlashcards(topic: string): Promise<{ front: string
   return data.cards ?? []
 }
 
+export type WebSearchItem = { title: string; url: string; snippet: string }
+
 export type LawSearchResult = {
   found: boolean
   lawCode: string
@@ -121,6 +127,10 @@ export type LawSearchResult = {
   articleContent?: string | null
   explanation?: string | null
   example?: string | null
+  /** Web aramasından gelen kaynaklar (Tavily/Serper); tüm kaynaklar birleştirilir. */
+  webResults?: WebSearchItem[]
+  /** true ise madde metni web kaynaklarından platform içinde AI ile derlendi; dış linke çıkmak gerekmez. */
+  fromWeb?: boolean
 }
 
 export async function searchLawArticle(query: string): Promise<LawSearchResult> {
@@ -165,6 +175,29 @@ export async function getLesson(
   }
 }
 
+export async function sendLessonDiscuss(
+  lessonContent: string,
+  userMessage: string,
+  options?: { subject?: string; topic?: string }
+): Promise<{ reply: string }> {
+  const res = await fetch(`${API_BASE}/lesson/discuss`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lessonContent,
+      userMessage: userMessage.trim(),
+      subject: options?.subject,
+      topic: options?.topic,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error ?? 'Yanıt alınamadı'
+    throw new Error(typeof msg === 'string' ? msg : 'Yanıt alınamadı')
+  }
+  return { reply: data.reply ?? '' }
+}
+
 export type ExamEvaluation = {
   score: number
   feedback: string
@@ -183,6 +216,21 @@ export type ExamEvaluation = {
   confidence?: import('@/lib/confidence').ConfidenceLevel
 }
 
+export type MainTopicId = import('@/lib/pratik-topic-config').MainTopicId
+export type QuestionStyleValue = import('@/lib/pratik-topic-config').QuestionStyleValue
+
+export type ExamGenerateOptions = {
+  questionType?: 'olay' | 'madde' | 'klasik' | 'coktan' | 'dogruyanlis' | 'karma'
+  difficulty?: 'kolay' | 'orta' | 'zor' | 'karisik'
+  questionStyle?: QuestionStyleValue
+  mainTopic?: MainTopicId
+  subtopic?: string
+  /** Kullanıcının yazdığı serbest konu/alt konu; ana+alt konu ile birleştirilir. */
+  customTopic?: string
+  /** true ise sadece customTopic kullanılır (ana/alt konu birleştirilmez). */
+  useOnlyCustomTopic?: boolean
+}
+
 export async function generateExamQuestion(
   topic: string,
   options?: ExamGenerateOptions
@@ -195,6 +243,11 @@ export async function generateExamQuestion(
       count: 1,
       questionType: options?.questionType ?? 'olay',
       difficulty: options?.difficulty ?? 'karisik',
+      questionStyle: options?.questionStyle ?? 'tek_olay_tek_soru',
+      mainTopic: options?.mainTopic,
+      subtopic: options?.subtopic,
+      customTopic: options?.customTopic?.trim(),
+      useOnlyCustomTopic: options?.useOnlyCustomTopic,
     }),
   })
   const data = await res.json().catch(() => ({}))
@@ -203,11 +256,6 @@ export async function generateExamQuestion(
     throw new Error(typeof msg === 'string' ? msg : 'Soru oluşturulamadı')
   }
   return data.question ?? ''
-}
-
-export type ExamGenerateOptions = {
-  questionType?: 'olay' | 'madde' | 'klasik' | 'coktan' | 'dogruyanlis' | 'karma'
-  difficulty?: 'kolay' | 'orta' | 'zor' | 'karisik'
 }
 
 export async function generateExamQuestions(
@@ -223,6 +271,11 @@ export async function generateExamQuestions(
       count: Math.min(50, Math.max(1, count)),
       questionType: options?.questionType ?? 'olay',
       difficulty: options?.difficulty ?? 'karisik',
+      questionStyle: options?.questionStyle ?? 'tek_olay_tek_soru',
+      mainTopic: options?.mainTopic,
+      subtopic: options?.subtopic,
+      customTopic: options?.customTopic?.trim(),
+      useOnlyCustomTopic: options?.useOnlyCustomTopic,
     }),
   })
   const data = await res.json().catch(() => ({}))
@@ -234,11 +287,41 @@ export async function generateExamQuestions(
   return Array.isArray(data.questions) ? data.questions : []
 }
 
+/** Tek olay çok soru: bir senaryo + aynı olaydan birden fazla alt soru. */
+export async function generateExamScenarioWithSubQuestions(
+  topic: string,
+  options?: ExamGenerateOptions
+): Promise<{ scenario: string; subQuestions: string[] }> {
+  const res = await fetch(`${API_BASE}/exam-practice/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic: topic.trim(),
+      questionStyle: 'tek_olay_cok_soru',
+      questionType: options?.questionType ?? 'olay',
+      difficulty: options?.difficulty ?? 'karisik',
+      mainTopic: options?.mainTopic,
+      subtopic: options?.subtopic,
+      customTopic: options?.customTopic?.trim(),
+      useOnlyCustomTopic: options?.useOnlyCustomTopic,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error ?? 'Senaryo oluşturulamadı'
+    throw new Error(typeof msg === 'string' ? msg : 'Senaryo oluşturulamadı')
+  }
+  if (data.mode !== 'tek_olay_cok_soru' || !data.scenario || !Array.isArray(data.subQuestions)) {
+    throw new Error('Tek olay çok soru yanıtı alınamadı')
+  }
+  return { scenario: data.scenario, subQuestions: data.subQuestions }
+}
+
 export async function evaluateExamAnswer(
   question: string,
   userAnswer: string,
   topic?: string,
-  options?: { explanationMode?: 'ogrenci' | 'uyap' }
+  options?: { explanationMode?: 'ogrenci' | 'uyap'; scenario?: string }
 ): Promise<ExamEvaluation> {
   const res = await fetch(`${API_BASE}/exam-practice/evaluate`, {
     method: 'POST',
@@ -248,6 +331,7 @@ export async function evaluateExamAnswer(
       userAnswer: userAnswer.trim(),
       topic: topic?.trim(),
       explanationMode: options?.explanationMode ?? 'ogrenci',
+      scenario: options?.scenario?.trim(),
     }),
   })
   const data = await res.json().catch(() => ({}))
@@ -265,6 +349,7 @@ export type DecisionAnalysisResult = {
   hukukiSorun?: string
   mahkemeYaklasimi?: string
   dayanilanKurallar?: string
+  kararinOnemi?: string
   karardanCikarilabilecekDers?: string
   sinavdaNasilKullanilabilir?: string
   farkliYorumIhtimali?: string
@@ -299,10 +384,18 @@ export async function analyzeDecision(text: string): Promise<DecisionAnalysisRes
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: text.trim() }),
   })
-  const data = await res.json().catch(() => ({}))
+  let data: { error?: string; analysis?: string } & Record<string, unknown> = {}
+  try {
+    data = await res.json()
+  } catch {
+    if (!res.ok) {
+      throw new Error(res.status === 400 ? 'Metin eksik veya geçersiz. Lütfen karar metnini yapıştırın.' : 'Karar analizi yapılamadı. Lütfen tekrar deneyin.')
+    }
+    throw new Error('Sunucu yanıtı işlenemedi. Lütfen tekrar deneyin.')
+  }
   if (!res.ok) {
-    const msg = data.error ?? 'Karar analizi yapılamadı.'
-    throw new Error(typeof msg === 'string' ? msg : 'Karar analizi yapılamadı.')
+    const msg = typeof data.error === 'string' ? data.error : 'Karar analizi yapılamadı. Lütfen metni kontrol edip tekrar deneyin.'
+    throw new Error(msg)
   }
   return data as DecisionAnalysisResult
 }
