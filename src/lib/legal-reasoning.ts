@@ -20,7 +20,7 @@ IRAC USULÜ (Türk hukuk eğitimine uyarlı – bu sırayı atlama):
 Motor davranışı: Önce sorunu tespit et, sonra kuralı belirt, sonra olaya uygula, en sonda sonucu yaz. Doğrudan sonuca atlama.
 `.trim()
 
-/** Optional educational parts for student-oriented answers (Olay Analizi, Pratik Çöz, Karar Analizi). */
+/** Optional educational parts for student-oriented answers (Olay Analizi, Sınav Pratiği, Karar Analizi). */
 export const IRAC_OPTIONAL_EDUCATIONAL = `
 Eğitim amaçlı cevaplarda isteğe bağlı ekle:
 - **Sınavda nasıl yazılır** – Öğrenci için kısa örnek veya sınavda yazım notu.
@@ -87,7 +87,7 @@ export const LEGAL_REASONING_NO_FABRICATION = `
 Kural ve karar uydurma. Sadece verilen KANUN KAYNAK METİNLERİndeki maddelere ve kurallara dayan; kaynakta yoksa "Verilen kaynaklarda yer almıyor" de.
 `.trim()
 
-/** Section label for the model-answer skeleton (Olay Analizi, Pratik Çöz, değerlendirme). */
+/** Section label for the model-answer skeleton (Olay Analizi, Sınav Pratiği, değerlendirme). */
 export const MODEL_ANSWER_SKELETON_LABEL = 'Örnek güçlü cevap iskeleti'
 
 /** Instruction for generating the model-answer skeleton: concise, exam-oriented, high quality. */
@@ -134,7 +134,7 @@ export const MULTI_ISSUE_OUTPUT_FORMAT = `
 
 /**
  * Full legal reasoning instruction block for system prompts (IRAC + optional educational).
- * Use in Olay Analizi, Pratik Çöz (evaluator), Karar Analizi, Sohbet (pratik soru).
+ * Use in Olay Analizi, Sınav Pratiği (evaluator), Karar Analizi, Sohbet (pratik soru).
  */
 export function getLegalReasoningInstruction(options?: {
   formalMode?: boolean

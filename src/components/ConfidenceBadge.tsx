@@ -6,7 +6,7 @@ type Props = { level: ConfidenceLevel; className?: string }
 
 /**
  * Subtle, professional confidence indicator for legal AI answers.
- * Used in Sohbet, Olay Analizi, Konu Anlatımı, Pratik Çöz.
+ * Used in Sohbet, Olay Analizi, Konu Anlatımı, Sınav Pratiği.
  */
 export function ConfidenceBadge({ level, className = '' }: Props) {
   const styles = {

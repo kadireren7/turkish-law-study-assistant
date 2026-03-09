@@ -1,6 +1,6 @@
 /**
  * Shared legal knowledge layer: source-aware retrieval used by Sohbet, Madde Ara,
- * Olay Analizi, Pratik Çöz, Konu Anlatımı, Haberler. All modules use the same
+ * Olay Analizi, Sınav Pratiği, Konu Anlatımı, Haberler. All modules use the same
  * retrieval and human-readable source display.
  * Classifies query → selects source types → retrieves relevant chunks; for article
  * questions injects direct madde text first, then combines with topic notes and decision summaries.

@@ -42,7 +42,7 @@ h1{font-size:1.35rem;margin-bottom:0.5rem;color:#0f172a;}
 @media print{body{margin:1rem;max-width:100%;}.meta{color:#334155;}.q{break-inside:avoid;}}
 `.replace(/\n/g, '')
 
-/** Build HTML for practice set (Pratik Çöz / Sınav Pratiği) – PDF via print. */
+/** Build HTML for practice set (Sınav Pratiği) – PDF via print. */
 export function buildPracticePrintHtml(meta: PracticeExportMeta): string {
   const { title, topic, questionType, difficulty, date, questions, scenario } = meta
   const metaHtml = [

@@ -41,7 +41,7 @@ const features = [
   },
   {
     href: '/pratik-coz',
-    title: 'Pratik Çöz',
+    title: 'Sınav Pratiği',
     description: 'Olay sorusu oluşturup cevabınızı yazın; puan ve detaylı geri bildirim alın.',
     icon: '✏️',
     delay: 150,

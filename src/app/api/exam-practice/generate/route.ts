@@ -204,11 +204,16 @@ export async function POST(request: Request) {
       : customTopic
         ? `Kullanıcı odak konu (mutlaka dikkate al): ${customTopic}.`
         : ''
-    const medeniDiversityLine = mainTopic === 'medeni' ? getMedeniDiversityHint() : ''
+    // Alt konu seçildiyse rastgele medeni tema ekleme (örn. Başlangıç Hükümleri seçilmişken nişanlanma konusu üretilmesin).
+    const medeniDiversityLine = mainTopic === 'medeni' && !subtopic ? getMedeniDiversityHint() : ''
 
+    const strictScopeLine = mainTopic && subtopic
+      ? `Konu sınırı: Soru SADECE "${topic}" kapsamında olsun. Bu alt konu dışındaki konulara (aynı dersin başka ünitesi veya başka ders) hiç girme.`
+      : ''
     if (questionStyle === 'tek_olay_cok_soru') {
       const userContent = [
         `Şu konu için TEK OLAY ÇOK SORU üret: "${topic}".`,
+        strictScopeLine,
         customTopicLine,
         medeniDiversityLine,
         subtopicInstruction,
@@ -254,6 +259,7 @@ export async function POST(request: Request) {
         : styleInstruction
       const userContent = [
         `Şu konu için tek bir soru üret: "${topic}".`,
+        strictScopeLine,
         customTopicLine,
         medeniDiversityLine,
         subtopicInstruction,
@@ -295,6 +301,7 @@ export async function POST(request: Request) {
       const outputFormat = getOutputFormatForType(questionType)
       const userContent = [
         `Şu konu için tam ${want} adet soru üret: "${topic}".`,
+        strictScopeLine,
         customTopicLine,
         medeniDiversityLine,
         subtopicInstruction,

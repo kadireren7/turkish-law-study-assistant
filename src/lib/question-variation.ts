@@ -138,7 +138,7 @@ export function getRandomVariationHints(): VariationHints {
   }
 }
 
-/** Tek istek için varyasyon talimatı (Pratik Çöz / exam generate). */
+/** Tek istek için varyasyon talimatı (Sınav Pratiği / exam generate). */
 export function buildVariationInstruction(hints: VariationHints): string {
   const parts = [
     `Olay türü: ${hints.factPattern}.`,
@@ -166,7 +166,7 @@ export function getSubtopicFocusInstruction(mainTopicId: string, subtopicValue: 
     'ceza:suçun maddi ve manevi unsurları': 'Alt konu: Suçun maddi ve manevi unsurları. Tipiklik, illiyet, kusur türleri; olayda unsurları tartıştır.',
     'ceza:meşru savunma': 'Alt konu: Meşru savunma. Saldırı, orantı, sınırlar; hukuka uygunluk nedeni odaklı senaryo.',
     'ceza:hata halleri': 'Alt konu: Hata halleri. Fiil hatası, hukuk hatası; kusur ve bilinç odaklı.',
-    'medeni:başlangıç hükümleri': 'Alt konu: Başlangıç hükümleri. Kanunun uygulama alanı, temel kavramlar.',
+    'medeni:başlangıç hükümleri': 'Alt konu: YALNIZCA Başlangıç Hükümleri (TMK 1–7, kanunun uygulama alanı, iyi niyet, dürüstlük kuralı, hukuki işlemler, hakların kullanılması). Bu alt konu dışına çıkma: nişanlanma, evlenme, aile, miras, eşya konularına girme.',
     'medeni:aile hukuku': 'Alt konu: Aile Hukuku. Evlilik, mal rejimi, boşanma, velayet, nafaka gibi konulara özgü senaryo.',
     'medeni:eşya hukuku': 'Alt konu: Eşya Hukuku. Mülkiyet, zilyetlik, tapu, devir; ayni haklar odaklı.',
     'medeni:zilyetlik ve mülkiyet': 'Alt konu: Zilyetlik ve Mülkiyet. Zilyetlik türleri, mülkiyetin korunması, tapu.',

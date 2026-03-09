@@ -24,7 +24,7 @@ export const SUBJECT_LABELS: Record<SubjectKey, string> = {
 export type StudyProfile = {
   /** Her alanda kaç kez pratik/sözlü/olay yapıldı */
   subjectCount: Record<SubjectKey, number>
-  /** Alan bazında toplam puan ve deneme sayısı (sadece Pratik Çöz puanları) */
+  /** Alan bazında toplam puan ve deneme sayısı (sadece Sınav Pratiği puanları) */
   subjectScores: Record<SubjectKey, { sum: number; n: number }>
   /** Son atlanan/eksik/hatalı noktalar (en fazla MAX_MISSED) */
   missedDistinctions: string[]
@@ -113,7 +113,7 @@ function saveProfile(p: StudyProfile): void {
   }
 }
 
-/** Pratik Çöz: değerlendirme sonrası çağrılır */
+/** Sınav Pratiği: değerlendirme sonrası çağrılır */
 export function recordPractice(params: {
   topic: string
   score: number
@@ -214,10 +214,10 @@ export function getSuggestions(profile?: StudyProfile): StudySuggestions {
     pratikOnerileri.push(`${SUBJECT_LABELS[leastPracticed]} konusunda yeni pratik soru çözmeniz faydalı olabilir.`)
   }
   if (weak.length > 0) {
-    pratikOnerileri.push(`Zayıf alanlarınızdan biri olan ${SUBJECT_LABELS[weak[0]]} için Pratik Çöz veya Mini Sözlü kullanın.`)
+    pratikOnerileri.push(`Zayıf alanlarınızdan biri olan ${SUBJECT_LABELS[weak[0]]} için Sınav Pratiği veya Mini Sözlü kullanın.`)
   }
   if (pratikOnerileri.length === 0 && totalPractice >= 1) {
-    pratikOnerileri.push('Pratik Çöz veya Mini Sözlü Yoklama ile farklı konularda soru çözebilirsiniz.')
+    pratikOnerileri.push('Sınav Pratiği veya Mini Sözlü Yoklama ile farklı konularda soru çözebilirsiniz.')
   }
 
   if (p.missedDistinctions.length > 0) {

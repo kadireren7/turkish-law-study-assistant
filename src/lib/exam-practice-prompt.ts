@@ -1,12 +1,12 @@
 /**
- * Pratik Çöz: hukuk pratiği motoru. Gerçekçi pratik olaylar üretir; IRAC ve beş boyutta değerlendirir.
- * Öncelik: pratik senaryolar; madde ezberi değil. Tamamen Türkçe, Türk hukuk öğrencisine uygun.
+ * Sınav Pratiği: hukuk pratiği motoru. Gerçekçi pratik olaylar üretir; IRAC ve beş boyutta değerlendirir.
+ * Öncelik: pratik senaryolar; madde ezberi değil. Tamamen Türkçe, Türk hukuk fakültesi müfredatına uygun.
  */
 
 export const CASE_AREAS =
   'Ceza hukuku, Medeni hukuk, Borçlar hukuku, Mülkiyet, Ehliyet, Sözleşme, Haksız fiil, İdare hukuku, Usul hukuku, Anayasa hukuku'
 
-/** Konu seçenekleri (Pratik Çöz UI ve generate API). */
+/** Konu seçenekleri (Sınav Pratiği UI ve generate API). */
 export const PRACTICE_TOPICS = [
   { value: 'Ceza Hukuku – kast, taksir, suçun unsurları, yaralama', label: 'Ceza Hukuku' },
   { value: 'Medeni Hukuk – ehliyet, kişiler, aile', label: 'Medeni Hukuk' },
@@ -39,6 +39,8 @@ export const DIFFICULTY_LEVELS = [
 export const EXAM_QUESTION_GENERATOR_PROMPT = `Sen Türk hukuku fakültesi pratik sınav soruları hazırlayan bir asistanısın. Verilen konu, alt konu, soru tipi ve zorluğa göre gerçekçi, çok boyutlu pratik sorular üretirsin. Çıktı tamamen Türkçe; gerçek fakülte sınav pratiği hissi ver.
 
 GÖREV: Hukuk pratiği motoru – gerçekçi, sınav tadında, tekrara düşmeyen sorular. ÖNCELİK: Pratik senaryolar ve hukuki mantık (olay–kural–uygulama–sonuç); tanım veya madde ezberi sorusu üretme. Öğrenci olayı çözebilsin, kuralı seçebilsin, uygulayabilsin.
+
+KONU SINIRI (ZORUNLU): Ana konu ve alt konu, Türk hukuk fakültesi müfredatına göre verilir. Soruyu YALNIZCA seçilen alt konu kapsamında üret. Seçilen alt konu dışına çıkma. Örnek: "Medeni Hukuk – Başlangıç Hükümleri" seçildiyse sadece kanunun uygulama alanı, iyi niyet, dürüstlük kuralı, hukuki işlemler, hakların kullanılması gibi başlangıç hükümleri konularına gir; nişanlanma, evlenme, miras, aile, eşya gibi diğer alt konulara hiç girme. "Medeni Hukuk – Nişanlanma ve Evlenme" seçildiyse sadece nişan ve evlenme; başlangıç veya miras karıştırma.
 
 TEK İZLEK (TEK BOYUT) YASAK:
 - Aynı tür "tek olay, tek sorun, tek sonuç" senaryoları tekrarlama. Her senaryoda en az iki hukuki boyut veya iki ayrı sorun/çatışma olsun (örn. hem ceza hem tazminat; hem geçerlilik hem süre; hem unsur hem kusur türü; hem idari işlem hem yargı yolu).
@@ -83,7 +85,7 @@ SORU TARZI – DİĞER:
 
 ÇIKTI: Yanıtta SADECE soru metnini ver. "SORU:" (veya "SORU 1:", "SORU 2:" …) ile başla; cevap veya açıklama ekleme. Tek olay çok soru modunda önce "SENARYO:" sonra "SORU 1:", "SORU 2:" ... ver.`
 
-export const EXAM_EVALUATOR_PROMPT = `Sen deneyimli bir hukuk öğretim üyesisin. Pratik Çöz (olay/klasik) cevaplarını, hukuki mantık motoruna göre beş boyutta değerlendiriyorsun. Geri bildirim tamamen Türkçe, sınav odaklı ve somut olsun.
+export const EXAM_EVALUATOR_PROMPT = `Sen deneyimli bir hukuk öğretim üyesisin. Sınav Pratiği (olay/klasik) cevaplarını, hukuki mantık motoruna göre beş boyutta değerlendiriyorsun. Geri bildirim tamamen Türkçe, sınav odaklı ve somut olsun.
 
 DEĞERLENDİRME – BEŞ BOYUT (her birini ayrı ayrı dikkate al; GÜÇLÜ YÖNLER / EKSİKLER / HUKUKİ HATALAR bölümlerinde bu boyutlara göre yaz):
 1) **Sorun tespiti** – Olaydaki hukuki sorunu doğru tespit etti mi? Sorunu isimlendirdi mi?

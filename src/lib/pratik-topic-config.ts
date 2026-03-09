@@ -1,6 +1,6 @@
 /**
- * Pratik Çöz: Ana konu ve alt konu seçimi.
- * Ana konu seçilince alt konular dinamik gösterilir; üretimde gerçekten kullanılır.
+ * Sınav Pratiği: Ana konu ve alt konu seçimi (Türk hukuk fakültesi müfredatına göre).
+ * Ana konu seçilince alt konular dinamik gösterilir; sorular yalnızca seçilen alt konu kapsamında üretilir.
  */
 
 export type MainTopicId =
@@ -106,7 +106,7 @@ export function buildTopicLabel(mainTopicId: MainTopicId, subtopicValue: string)
   return `${mainLabel} – ${subtopicValue}`
 }
 
-/** Soru tarzı seçenekleri (Pratik Çöz). */
+/** Soru tarzı seçenekleri (Sınav Pratiği). */
 export const QUESTION_STYLES = [
   { value: 'tek_olay_tek_soru', label: 'Tek olay, tek soru' },
   { value: 'tek_olay_cok_soru', label: 'Tek olay, çok soru' },

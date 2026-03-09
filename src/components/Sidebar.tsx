@@ -12,7 +12,7 @@ const navItems = [
   { href: '/case-solver', label: 'Olay Analizi', icon: '⚖️' },
   { href: '/karar-analizi', label: 'Karar Analizi', icon: '📋' },
   { href: '/mini-sozlu', label: 'Mini Sözlü Yoklama', icon: '🎤' },
-  { href: '/pratik-coz', label: 'Pratik Çöz', icon: '✏️' },
+  { href: '/pratik-coz', label: 'Sınav Pratiği', icon: '✏️' },
   { href: '/law-lessons', label: 'Konu Anlatımı', icon: '📖' },
   { href: '/flashcards', label: 'Bilgi Kartları', icon: '🃏' },
   { href: '/guncel-gelismeler', label: 'Güncel Gelişmeler', icon: '📌' },

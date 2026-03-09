@@ -1,7 +1,7 @@
 /**
  * Answer confidence levels for the legal AI assistant.
  * Source-based: how strongly the answer is supported by local mevzuat / retrieved sources.
- * Labels are fully Turkish; used in Sohbet, Olay Analizi, Konu Anlatımı, Pratik Çöz.
+ * Labels are fully Turkish; used in Sohbet, Olay Analizi, Konu Anlatımı, Sınav Pratiği.
  */
 
 import type { RetrievalResult } from '@/lib/legal-brain'

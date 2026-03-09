@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Pratik Çöz – tek istek, tek sonuç.
+ * Sınav Pratiği – tek istek, tek sonuç.
  * Çift çıktı önlemi: (1) generateInFlightRef / evaluateInFlightRef ile aynı anda yalnızca bir üretim/değerlendirme.
  * (2) generateRequestIdRef / evaluateRequestIdRef ile gelen yanıt yalnızca en güncel isteğe aitse state güncellenir.
  */
@@ -209,7 +209,7 @@ export default function PratikCozPage() {
       <header className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 sm:px-6 py-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Pratik Çöz</h2>
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Sınav Pratiği</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               Çalışma türünü seçin, konuyu belirleyin ve soru oluşturun.
             </p>
@@ -334,7 +334,7 @@ export default function PratikCozPage() {
                   <div className="flex flex-wrap gap-3 items-center">
                     <button
                       type="button"
-                      onClick={() => printQuizSet({ title: 'Pratik Çöz – Çoktan Seçmeli', topic, date: new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }), questions: quizQuestions.map((q) => ({ question: q.question, options: q.options, correct: q.correct, explanation: q.explanation })), showAnswers: false })}
+                      onClick={() => printQuizSet({ title: 'Sınav Pratiği – Çoktan Seçmeli', topic, date: new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }), questions: quizQuestions.map((q) => ({ question: q.question, options: q.options, correct: q.correct, explanation: q.explanation })), showAnswers: false })}
                       className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
                     >
                       PDF (Yazdır)
@@ -580,7 +580,7 @@ export default function PratikCozPage() {
                     const typeLabel = QUESTION_TYPES.find((t) => t.value === questionType)?.label ?? questionType
                     const diffLabel = DIFFICULTY_LEVELS.find((d) => d.value === difficulty)?.label ?? difficulty
                     printPracticeSet({
-                      title: hasScenarioMode ? 'Pratik Çöz – Tek olay çok soru' : 'Pratik Çöz – Soru Seti',
+                      title: hasScenarioMode ? 'Sınav Pratiği – Tek olay çok soru' : 'Sınav Pratiği – Soru Seti',
                       topic,
                       questionType: typeLabel,
                       difficulty: diffLabel,
@@ -603,7 +603,7 @@ export default function PratikCozPage() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          title: hasScenarioMode ? 'Pratik Çöz – Tek olay çok soru' : 'Pratik Çöz – Soru Seti',
+                          title: hasScenarioMode ? 'Sınav Pratiği – Tek olay çok soru' : 'Sınav Pratiği – Soru Seti',
                           topic,
                           questionType,
                           difficulty,
@@ -616,7 +616,7 @@ export default function PratikCozPage() {
                       const url = URL.createObjectURL(blob)
                       const a = document.createElement('a')
                       a.href = url
-                      a.download = `pratik-coz-${slugForFilename(topic)}-${dateSlugForFilename()}.docx`
+                      a.download = `sinav-pratigi-${slugForFilename(topic)}-${dateSlugForFilename()}.docx`
                       a.click()
                       URL.revokeObjectURL(url)
                     } catch (e) {
