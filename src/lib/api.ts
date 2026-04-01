@@ -1,5 +1,18 @@
 const API_BASE = '/api'
 
+function unwrapApiPayload<T = any>(raw: any): T {
+  if (raw && typeof raw === 'object' && raw.ok === true && raw.data) return raw.data as T
+  return raw as T
+}
+
+function extractApiError(raw: any, fallback: string): string {
+  if (raw && typeof raw === 'object') {
+    if (typeof raw.error === 'string') return raw.error
+    if (raw.ok === false && typeof raw.error === 'string') return raw.error
+  }
+  return fallback
+}
+
 export type ChatMessage = { role: 'user' | 'assistant'; content: string }
 
 export type ChatResponse = {
@@ -15,6 +28,30 @@ export type ChatResponse = {
   queryType?: string
   /** Sınıflandırma güveni: yuksek | orta | dusuk */
   classificationConfidence?: 'yuksek' | 'orta' | 'dusuk'
+  /** Veri rotası: static | local (RAG) | live (web) */
+  dataRoute?: 'static' | 'local' | 'live'
+  freshnessClass?: 'requires_live_data' | 'static'
+  requiresLiveData?: boolean
+}
+
+export type ExploreMode = 'law_search' | 'news' | 'event_analysis' | 'political_history'
+
+export type PoliticalHistoryMode = 'timeline' | 'cause_effect' | 'practice'
+
+export type ExploreResponse = {
+  mode: ExploreMode
+  freshnessClass?: 'requires_live_data' | 'static'
+  dataRoute?: 'static' | 'local' | 'live'
+  politicalHistoryMode?: PoliticalHistoryMode
+  shortAnswer: string
+  structured: {
+    title: string
+    points: string[]
+    practicalNote?: string
+  }
+  sources: string[]
+  followUp?: string
+  uncertainty?: string
 }
 
 export async function sendChatMessage(messages: ChatMessage[], options?: { uyapMode?: boolean; explanationMode?: 'ogrenci' | 'uyap' }): Promise<ChatResponse> {
@@ -29,19 +66,68 @@ export async function sendChatMessage(messages: ChatMessage[], options?: { uyapM
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const msg = data.error ?? 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.'
+    const msg = extractApiError(data, 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.')
     throw new Error(typeof msg === 'string' ? msg : 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.')
   }
+  const payload = unwrapApiPayload<any>(data)
   return {
-    reply: data.reply ?? '',
+    reply: payload.reply ?? '',
+    sources: Array.isArray(payload.sources) ? payload.sources : [],
+    sourceLabels: Array.isArray(payload.sourceLabels) ? payload.sourceLabels : undefined,
+    lastChecked: typeof payload.lastChecked === 'string' ? payload.lastChecked : payload.lastChecked === null ? null : undefined,
+    lowConfidence: Boolean(payload.lowConfidence),
+    warnings: Array.isArray(payload.warnings) ? payload.warnings : undefined,
+    confidence: payload.confidence === 'yuksek' || payload.confidence === 'orta' || payload.confidence === 'dusuk' ? payload.confidence : undefined,
+    queryType: typeof payload.queryType === 'string' ? payload.queryType : undefined,
+    classificationConfidence: payload.classificationConfidence === 'yuksek' || payload.classificationConfidence === 'orta' || payload.classificationConfidence === 'dusuk' ? payload.classificationConfidence : undefined,
+    dataRoute: payload.dataRoute === 'static' || payload.dataRoute === 'local' || payload.dataRoute === 'live' ? payload.dataRoute : undefined,
+    freshnessClass: payload.freshnessClass === 'requires_live_data' || payload.freshnessClass === 'static' ? payload.freshnessClass : undefined,
+    requiresLiveData: typeof payload.requiresLiveData === 'boolean' ? payload.requiresLiveData : undefined,
+  }
+}
+
+export async function sendExploreQuery(
+  query: string,
+  options?: {
+    forceMode?: 'law_search' | 'news' | 'event_analysis'
+    politicalHistoryMode?: PoliticalHistoryMode
+  }
+): Promise<ExploreResponse> {
+  const res = await fetch(`${API_BASE}/explore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: query.trim(),
+      ...(options?.forceMode && { forceMode: options.forceMode }),
+      ...(options?.politicalHistoryMode && { politicalHistoryMode: options.politicalHistoryMode }),
+    }),
+  })
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok || payload?.ok === false) {
+    const msg = extractApiError(payload, 'Keşfet yanıtı alınamadı.')
+    throw new Error(typeof msg === 'string' ? msg : 'Keşfet yanıtı alınamadı.')
+  }
+  const data = unwrapApiPayload<any>(payload) ?? {}
+  return {
+    mode:
+      data.mode === 'law_search' || data.mode === 'news' || data.mode === 'event_analysis' || data.mode === 'political_history'
+        ? data.mode
+        : 'event_analysis',
+    freshnessClass: data.freshnessClass === 'requires_live_data' || data.freshnessClass === 'static' ? data.freshnessClass : undefined,
+    dataRoute: data.dataRoute === 'static' || data.dataRoute === 'local' || data.dataRoute === 'live' ? data.dataRoute : undefined,
+    politicalHistoryMode:
+      data.politicalHistoryMode === 'timeline' || data.politicalHistoryMode === 'cause_effect' || data.politicalHistoryMode === 'practice'
+        ? data.politicalHistoryMode
+        : undefined,
+    shortAnswer: typeof data.shortAnswer === 'string' ? data.shortAnswer : '',
+    structured: {
+      title: typeof data?.structured?.title === 'string' ? data.structured.title : 'Sonuç',
+      points: Array.isArray(data?.structured?.points) ? data.structured.points : [],
+      practicalNote: typeof data?.structured?.practicalNote === 'string' ? data.structured.practicalNote : undefined,
+    },
     sources: Array.isArray(data.sources) ? data.sources : [],
-    sourceLabels: Array.isArray(data.sourceLabels) ? data.sourceLabels : undefined,
-    lastChecked: typeof data.lastChecked === 'string' ? data.lastChecked : data.lastChecked === null ? null : undefined,
-    lowConfidence: Boolean(data.lowConfidence),
-    warnings: Array.isArray(data.warnings) ? data.warnings : undefined,
-    confidence: data.confidence === 'yuksek' || data.confidence === 'orta' || data.confidence === 'dusuk' ? data.confidence : undefined,
-    queryType: typeof data.queryType === 'string' ? data.queryType : undefined,
-    classificationConfidence: data.classificationConfidence === 'yuksek' || data.classificationConfidence === 'orta' || data.classificationConfidence === 'dusuk' ? data.classificationConfidence : undefined,
+    followUp: typeof data.followUp === 'string' ? data.followUp : undefined,
+    uncertainty: typeof data.uncertainty === 'string' ? data.uncertainty : undefined,
   }
 }
 
@@ -214,6 +300,9 @@ export type ExamEvaluation = {
   summary?: string
   /** Yanıtın kaynaklara dayanma güveni: Yüksek / Orta / Düşük güven */
   confidence?: import('@/lib/confidence').ConfidenceLevel
+  mistakeTags?: import('@/lib/practice-adaptive').MistakeTag[]
+  nextDifficulty?: import('@/lib/practice-adaptive').PracticeDifficulty
+  sourcesUsed?: string[]
 }
 
 export type MainTopicId = import('@/lib/pratik-topic-config').MainTopicId
@@ -229,6 +318,16 @@ export type ExamGenerateOptions = {
   customTopic?: string
   /** true ise sadece customTopic kullanılır (ana/alt konu birleştirilmez). */
   useOnlyCustomTopic?: boolean
+  adaptiveDifficulty?: import('@/lib/practice-adaptive').PracticeDifficulty
+  focusMistakes?: import('@/lib/practice-adaptive').MistakeTag[]
+}
+
+export type ExamGenerateResult = {
+  questions?: string[]
+  question?: string
+  scenario?: string
+  subQuestions?: string[]
+  sourcesUsed?: string[]
 }
 
 export async function generateExamQuestion(
@@ -248,14 +347,17 @@ export async function generateExamQuestion(
       subtopic: options?.subtopic,
       customTopic: options?.customTopic?.trim(),
       useOnlyCustomTopic: options?.useOnlyCustomTopic,
+      adaptiveDifficulty: options?.adaptiveDifficulty,
+      focusMistakes: options?.focusMistakes,
     }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const msg = data.error ?? 'Soru oluşturulamadı'
+    const msg = extractApiError(data, 'Soru oluşturulamadı')
     throw new Error(typeof msg === 'string' ? msg : 'Soru oluşturulamadı')
   }
-  return data.question ?? ''
+  const payload = unwrapApiPayload<any>(data)
+  return payload.question ?? ''
 }
 
 export async function generateExamQuestions(
@@ -276,15 +378,55 @@ export async function generateExamQuestions(
       subtopic: options?.subtopic,
       customTopic: options?.customTopic?.trim(),
       useOnlyCustomTopic: options?.useOnlyCustomTopic,
+      adaptiveDifficulty: options?.adaptiveDifficulty,
+      focusMistakes: options?.focusMistakes,
     }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const msg = data.error ?? 'Sorular oluşturulamadı'
+    const msg = extractApiError(data, 'Sorular oluşturulamadı')
     throw new Error(typeof msg === 'string' ? msg : 'Sorular oluşturulamadı')
   }
-  if (count === 1 && data.question) return [data.question]
-  return Array.isArray(data.questions) ? data.questions : []
+  const payload = unwrapApiPayload<any>(data)
+  if (count === 1 && payload.question) return [payload.question]
+  return Array.isArray(payload.questions) ? payload.questions : []
+}
+
+export async function generateExamQuestionsDetailed(
+  topic: string,
+  count: number,
+  options?: ExamGenerateOptions
+): Promise<ExamGenerateResult> {
+  const res = await fetch(`${API_BASE}/exam-practice/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic: topic.trim(),
+      count: Math.min(50, Math.max(1, count)),
+      questionType: options?.questionType ?? 'olay',
+      difficulty: options?.difficulty ?? 'karisik',
+      questionStyle: options?.questionStyle ?? 'tek_olay_tek_soru',
+      mainTopic: options?.mainTopic,
+      subtopic: options?.subtopic,
+      customTopic: options?.customTopic?.trim(),
+      useOnlyCustomTopic: options?.useOnlyCustomTopic,
+      adaptiveDifficulty: options?.adaptiveDifficulty,
+      focusMistakes: options?.focusMistakes,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = extractApiError(data, 'Sorular oluşturulamadı')
+    throw new Error(typeof msg === 'string' ? msg : 'Sorular oluşturulamadı')
+  }
+  const payload = unwrapApiPayload<any>(data)
+  return {
+    question: typeof payload.question === 'string' ? payload.question : undefined,
+    questions: Array.isArray(payload.questions) ? payload.questions : undefined,
+    scenario: typeof payload.scenario === 'string' ? payload.scenario : undefined,
+    subQuestions: Array.isArray(payload.subQuestions) ? payload.subQuestions : undefined,
+    sourcesUsed: Array.isArray(payload.sourcesUsed) ? payload.sourcesUsed : undefined,
+  }
 }
 
 /** Tek olay çok soru: bir senaryo + aynı olaydan birden fazla alt soru. */
@@ -304,24 +446,31 @@ export async function generateExamScenarioWithSubQuestions(
       subtopic: options?.subtopic,
       customTopic: options?.customTopic?.trim(),
       useOnlyCustomTopic: options?.useOnlyCustomTopic,
+      adaptiveDifficulty: options?.adaptiveDifficulty,
+      focusMistakes: options?.focusMistakes,
     }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const msg = data.error ?? 'Senaryo oluşturulamadı'
+    const msg = extractApiError(data, 'Senaryo oluşturulamadı')
     throw new Error(typeof msg === 'string' ? msg : 'Senaryo oluşturulamadı')
   }
-  if (data.mode !== 'tek_olay_cok_soru' || !data.scenario || !Array.isArray(data.subQuestions)) {
+  const payload = unwrapApiPayload<any>(data)
+  if (payload.mode !== 'tek_olay_cok_soru' || !payload.scenario || !Array.isArray(payload.subQuestions)) {
     throw new Error('Tek olay çok soru yanıtı alınamadı')
   }
-  return { scenario: data.scenario, subQuestions: data.subQuestions }
+  return { scenario: payload.scenario, subQuestions: payload.subQuestions }
 }
 
 export async function evaluateExamAnswer(
   question: string,
   userAnswer: string,
   topic?: string,
-  options?: { explanationMode?: 'ogrenci' | 'uyap'; scenario?: string }
+  options?: {
+    explanationMode?: 'ogrenci' | 'uyap'
+    scenario?: string
+    currentDifficulty?: import('@/lib/practice-adaptive').PracticeDifficulty
+  }
 ): Promise<ExamEvaluation> {
   const res = await fetch(`${API_BASE}/exam-practice/evaluate`, {
     method: 'POST',
@@ -332,14 +481,15 @@ export async function evaluateExamAnswer(
       topic: topic?.trim(),
       explanationMode: options?.explanationMode ?? 'ogrenci',
       scenario: options?.scenario?.trim(),
+      currentDifficulty: options?.currentDifficulty,
     }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const msg = data.error ?? 'Değerlendirme yapılamadı'
+    const msg = extractApiError(data, 'Değerlendirme yapılamadı')
     throw new Error(typeof msg === 'string' ? msg : 'Değerlendirme yapılamadı')
   }
-  return data as ExamEvaluation
+  return unwrapApiPayload<ExamEvaluation>(data)
 }
 
 export type DecisionAnalysisResult = {

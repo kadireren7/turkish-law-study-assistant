@@ -3,6 +3,7 @@
  * platform içinde özetlenir — kullanıcı dış linke çıkmak zorunda kalmaz.
  */
 import { NextResponse } from 'next/server'
+import { LEGAL_EDUCATION_EPISTEMIC_CORE } from '@/lib/legal-education-master-prompt'
 import { parseLawQuery, searchLawArticle } from '@/lib/law-search'
 import { classifyQuery } from '@/lib/query-classifier'
 import { getOpenAIIfAvailable } from '@/lib/openai'
@@ -27,7 +28,9 @@ async function synthesizeFromWeb(
     messages: [
       {
         role: 'system',
-        content: `Sen Türk hukuku metinlerini özetleyen bir asistanısın. Verilen web arama sonuçlarına GÖRE ilgili kanun maddesinin metnini ve kısa açıklamasını çıkar. Uydurma yapma; sadece verilen metinlerdeki bilgiyi kullan. Yanıtı Türkçe ve yapılandırılmış ver. JSON ile yanıtla: {"maddeBasligi": "Madde başlığı veya null", "maddeMetni": "Madde metni (paragraflar (1) (2) vb. korunacak)", "basitAciklama": "2-4 cümle basit açıklama"}`,
+        content: `${LEGAL_EDUCATION_EPISTEMIC_CORE}
+
+Sen Türk hukuku metinlerini özetleyen bir asistanısın. Verilen web arama sonuçlarına GÖRE ilgili kanun maddesinin metnini ve kısa açıklamasını çıkar. Uydurma yapma; sadece verilen metinlerdeki bilgiyi kullan. Yanıtı Türkçe ve yapılandırılmış ver. JSON ile yanıtla: {"maddeBasligi": "Madde başlığı veya null", "maddeMetni": "Madde metni (paragraflar (1) (2) vb. korunacak)", "basitAciklama": "2-4 cümle basit açıklama"}`,
       },
       {
         role: 'user',

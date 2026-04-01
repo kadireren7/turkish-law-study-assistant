@@ -8,6 +8,7 @@ export type MainTopicId =
   | 'borclar'
   | 'ceza'
   | 'anayasa'
+  | 'siyasi_tarih'
   | 'idare'
   | 'cmk'
   | 'hmk'
@@ -20,6 +21,7 @@ export const MAIN_TOPICS: { id: MainTopicId; value: string; label: string }[] = 
   { id: 'borclar', value: 'Borçlar Hukuku', label: 'Borçlar Hukuku' },
   { id: 'ceza', value: 'Ceza Hukuku', label: 'Ceza Hukuku' },
   { id: 'anayasa', value: 'Anayasa Hukuku', label: 'Anayasa Hukuku' },
+  { id: 'siyasi_tarih', value: 'Siyasi Tarih', label: 'Siyasi Tarih' },
   { id: 'idare', value: 'İdare Hukuku', label: 'İdare Hukuku' },
   { id: 'cmk', value: 'CMK', label: 'Ceza Muhakemesi Kanunu' },
   { id: 'hmk', value: 'HMK', label: 'Hukuk Muhakemeleri Kanunu' },
@@ -67,6 +69,14 @@ const SUBTOPICS: Record<MainTopicId, SubtopicItem[]> = {
     { value: 'Devlet Organları', label: 'Devlet Organları' },
     { value: 'Anayasal Yargı', label: 'Anayasal Yargı' },
     { value: 'Olağanüstü Yönetim', label: 'Olağanüstü Yönetim' },
+    { value: 'Siyasi Tarih ve Anayasal Dönüşüm', label: 'Siyasi Tarih ve Anayasal Dönüşüm' },
+  ],
+  siyasi_tarih: [
+    { value: 'Osmanlıdan Cumhuriyete Geçiş', label: 'Osmanlıdan Cumhuriyete Geçiş' },
+    { value: '1921-1924 Anayasal Düzen', label: '1921-1924 Anayasal Düzen' },
+    { value: '1961-1982 Anayasa Karşılaştırması', label: '1961-1982 Anayasa Karşılaştırması' },
+    { value: 'Demokratikleşme ve Reform Süreçleri', label: 'Demokratikleşme ve Reform Süreçleri' },
+    { value: 'Zaman Çizelgesi ve Neden-Sonuç', label: 'Zaman Çizelgesi ve Neden-Sonuç' },
   ],
   idare: [
     { value: 'İdari İşlem', label: 'İdari İşlem' },

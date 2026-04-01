@@ -19,8 +19,12 @@ import {
   formatInferenceForPrompt,
 } from '@/lib/fact-to-law-inference'
 import { confidenceFromRetrieval } from '@/lib/confidence'
+import { deriveMistakeTags, inferNextDifficulty, type PracticeDifficulty } from '@/lib/practice-adaptive'
 import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
 import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
+import { searchWeb, isWebSearchAvailable, formatWebSearchContext } from '@/lib/web-search'
+import { requiresLiveData } from '@/lib/live-data-classifier'
+import { isNonEvaluableAnswer } from '@/lib/answer-quality'
 
 function parseEvaluation(text: string): {
   score: number
@@ -117,17 +121,80 @@ export async function POST(request: Request) {
   const openai = getOpenAI()
 
   try {
-    const body = await request.json() as { question?: string; userAnswer?: string; topic?: string; explanationMode?: 'ogrenci' | 'uyap'; scenario?: string }
+    const body = await request.json() as {
+      question?: string
+      userAnswer?: string
+      topic?: string
+      explanationMode?: 'ogrenci' | 'uyap'
+      scenario?: string
+      currentDifficulty?: PracticeDifficulty
+    }
     const question = typeof body.question === 'string' ? body.question.trim() : ''
     const userAnswer = typeof body.userAnswer === 'string' ? body.userAnswer.trim() : ''
     const explanationMode = body.explanationMode === 'uyap' ? 'uyap' : 'ogrenci'
     const scenario = typeof body.scenario === 'string' ? body.scenario.trim() : ''
+    const currentDifficulty: PracticeDifficulty =
+      body.currentDifficulty === 'kolay' || body.currentDifficulty === 'orta' || body.currentDifficulty === 'zor' || body.currentDifficulty === 'karisik'
+        ? body.currentDifficulty
+        : 'karisik'
 
     if (!question || !userAnswer) {
       return NextResponse.json(
         { error: 'question ve userAnswer gerekli' },
         { status: 400 }
       )
+    }
+
+    if (isNonEvaluableAnswer(userAnswer)) {
+      const feedback = `**PUAN:** 0
+
+**GENEL DEĞERLENDİRME:**
+Bu metin hukuk sınavı cevabı olarak değerlendirilemez. Anlamlı Türkçe cümle, olay özeti veya IRAC (sorun–kural–uygulama–sonuç) yapısı görülmüyor; rastgele karakter veya anlamsız giriş olarak değerlendirildi.
+
+**GÜÇLÜ YÖNLER:**
+- Bu cevapta belirgin güçlü yön tespit edilmedi.
+
+**EKSİKLER:**
+- Soruya yönelik hukukî analiz yok.
+- Yapı, kavram ve madde atfı yok.
+
+**HUKUKİ HATALAR:**
+- Değerlendirilebilir hukukî argüman üretilmemiş.
+
+**ATLANAN NOKTALAR:**
+- Sorunun gerektirdiği tüm unsurlar eksik.
+
+**SINAVDA DAHA YÜKSEK NOT İÇİN ÖNERİ:**
+Soruyu ve varsa senaryoyu okuyun; kısa olay özeti, hukuki sorun, ilgili kural (kaynaklı), uygulama ve sonuç yazın. Tek cümlede dahi olsa Türkçe ve hukuk terimleri kullanın.
+
+**ÖRNEK GÜÇLÜ CEVAP İSKELETİ:**
+1) Olay / sorun  2) İlgili norm  3) Olaya uygulama  4) Sonuç
+
+**Önemli:** Geri bildirimde yalnızca yukarıdaki öğrenci metnine dayanın; metinde olmayan olay veya kişi uydurmayın.`
+      return NextResponse.json({
+        score: 0,
+        feedback,
+        generalAssessment: 'Cevap değerlendirmeye uygun değil (anlamsız veya çok eksik).',
+        strongPoints: ['Bu cevapta belirgin güçlü yön tespit edilmedi.'],
+        improvePoints: ['Hukukî analiz ve IRAC yapısı ekleyin.'],
+        legalErrors: ['Değerlendirilebilir hukukî argüman yok.'],
+        missedPoints: ['Sorunun tüm unsurları atlanmış.'],
+        suggestionForHigherGrade: 'Somut olay özeti ve madde atıflı IRAC yazın.',
+        exampleSkeleton: 'Olay → Hukuki sorun → Kural → Uygulama → Sonuç',
+        problemIdentification: '',
+        ruleApplication: '',
+        howToImprove: 'Anlamlı Türkçe ile yeniden yazın.',
+        summary: 'Puan 0: değerlendirilebilir cevap yok.',
+        confidence: 'dusuk',
+        mistakeTags: deriveMistakeTags({
+          score: 0,
+          improvePoints: ['Yapı ve içerik eksik'],
+          legalErrors: ['Argüman yok'],
+          missedPoints: ['Tümü'],
+        }),
+        nextDifficulty: inferNextDifficulty(0, currentDifficulty),
+        classification: { category: 'sinav_pratigi', confidence: 'yuksek' },
+      })
     }
     const qCheck = validateTextLength(question, LIMITS.examQuestion, 'Soru')
     if (!qCheck.ok) return NextResponse.json({ error: qCheck.error }, { status: qCheck.status })
@@ -157,6 +224,14 @@ export async function POST(request: Request) {
       lawContext,
       sourceBlock
     )
+    let sourcesUsed: string[] = []
+    if (isWebSearchAvailable() && (requiresLiveData(question) || requiresLiveData(body.topic ?? ''))) {
+      const webResults = await searchWeb(`${body.topic ?? ''} ${question}`.trim())
+      if (webResults.length > 0) {
+        systemContent += `\n\n${formatWebSearchContext(webResults)}\n\nWEB GÜNCELLİK KURALI: Değerlendirmede güncel iddiaları bu web bloklarıyla doğrula; doğrulanmayan güncel iddiaları "belirsiz" olarak işaretle.`
+        sourcesUsed = webResults.slice(0, 5).map((w) => w.url)
+      }
+    }
     systemContent += `\n\nHUKUKİ MANTIK (değerlendirme referansı):\n${IRAC_TEMPLATE}\n\nÖğrenci cevabını yukarıdaki beş boyuta (sorun tespiti, kural seçimi, uygulama, sonuç, yazım gücü) ve IRAC sırasına göre değerlendir.`
     systemContent += EXPLANATION_MODE_INSTRUCTIONS[explanationMode]
     const inferenceBlock = formatInferenceForPrompt(inference)
@@ -173,8 +248,8 @@ export async function POST(request: Request) {
         { role: 'system', content: systemContent },
         { role: 'user', content: userContent },
       ],
-      temperature: 0.3,
-      max_tokens: 3072,
+      temperature: 0.28,
+      max_tokens: 1400,
     })
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? ''
@@ -184,6 +259,13 @@ export async function POST(request: Request) {
 
     const parsed = parseEvaluation(raw)
     const answerConfidence = confidenceFromRetrieval(retrieval, queryType)
+    const mistakeTags = deriveMistakeTags({
+      score: parsed.score,
+      improvePoints: parsed.improvePoints,
+      legalErrors: parsed.legalErrors,
+      missedPoints: parsed.missedPoints,
+    })
+    const nextDifficulty = inferNextDifficulty(parsed.score, currentDifficulty)
     return NextResponse.json({
       score: parsed.score,
       feedback: raw,
@@ -199,6 +281,9 @@ export async function POST(request: Request) {
       howToImprove: parsed.howToImprove || undefined,
       summary: parsed.summary || parsed.generalAssessment || undefined,
       confidence: answerConfidence,
+      mistakeTags,
+      nextDifficulty,
+      ...(sourcesUsed.length > 0 && { sourcesUsed }),
       classification: { category: queryType, confidence: classificationConfidence },
     })
   } catch (e) {

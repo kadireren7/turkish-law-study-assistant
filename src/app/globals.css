@@ -21,17 +21,17 @@
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card-bg: #1e293b;
-  --card-border: rgba(51, 65, 85, 0.8);
-  --sidebar-bg: #0f172a;
-  --sidebar-border: #1e293b;
-  --accent: #2dd4bf;
-  --accent-hover: #14b8a6;
-  --muted: #94a3b8;
-  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.25);
-  --card-shadow-hover: 0 4px 12px -2px rgb(0 0 0 / 0.35);
+  --background: #020617;
+  --foreground: #e6edf9;
+  --card-bg: #0b1224;
+  --card-border: rgba(41, 56, 88, 0.75);
+  --sidebar-bg: #030712;
+  --sidebar-border: #111827;
+  --accent: #35d6c8;
+  --accent-hover: #27beaf;
+  --muted: #9fb3d9;
+  --card-shadow: 0 8px 24px -12px rgb(3 10 28 / 0.8);
+  --card-shadow-hover: 0 16px 34px -14px rgb(3 10 28 / 0.9);
   --radius: 0.875rem;
   --radius-lg: 1.125rem;
   --transition: 200ms ease;
@@ -48,9 +48,15 @@ body {
   height: 100%;
   color: var(--foreground);
   background: var(--background);
+  background-image: radial-gradient(80rem 40rem at -10% -10%, rgba(58, 91, 170, 0.22), transparent 50%), radial-gradient(70rem 35rem at 110% 0%, rgba(36, 126, 166, 0.2), transparent 45%);
   overflow: hidden;
   overflow-x: hidden;
   transition: background-color var(--transition), color var(--transition);
+}
+
+html.dark body {
+  background-color: #020617;
+  background-image: none;
 }
 
 /* Premium card – light/dark */
@@ -67,6 +73,29 @@ body {
   }
   .gradient-teal {
     @apply bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 dark:hover:from-teal-600 dark:hover:to-emerald-600;
+  }
+
+  /* Sidebar “Soru arşivi” list — thin, theme-aware scrollbar */
+  .sidebar-archive-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+  }
+  .sidebar-archive-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+  .sidebar-archive-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 2px 0;
+  }
+  .sidebar-archive-scroll::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184 / 0.45);
+    border-radius: 9999px;
+  }
+  .dark .sidebar-archive-scroll {
+    scrollbar-color: rgb(71 85 105 / 0.55) transparent;
+  }
+  .dark .sidebar-archive-scroll::-webkit-scrollbar-thumb {
+    background-color: rgb(71 85 105 / 0.55);
   }
 }
 

@@ -8,6 +8,7 @@ export const ERROR_MESSAGES = {
   missingKey: 'API anahtarı bulunamadı. .env.local dosyasını kontrol edin.',
   quota: 'OpenAI API kotası aşıldı veya projede kullanılabilir kredi bulunmuyor. Lütfen billing, usage ve API anahtarını kontrol edin.',
   server: 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.',
+  network: 'OpenAI servisine bağlanılamadı (internet/DNS). Bağlantınızı kontrol edip tekrar deneyin.',
 } as const
 
 let _client: OpenAI | null = null
@@ -18,7 +19,7 @@ let _client: OpenAI | null = null
  */
 export function getOpenAI(): OpenAI {
   if (!_client) {
-    _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' })
+    _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '', timeout: 30_000 })
   }
   return _client
 }
@@ -53,6 +54,12 @@ export function handleOpenAIError(e: unknown): { status: number; message: string
     if (isQuota) return { status: 429, message: ERROR_MESSAGES.quota }
     if (status >= 500 || status === 429) return { status, message: ERROR_MESSAGES.server }
     return { status: status >= 400 ? status : 500, message: ERROR_MESSAGES.server }
+  }
+  const err = e as { message?: string; cause?: { code?: string; errno?: string; message?: string } }
+  const networkCode = (err?.cause?.code ?? err?.cause?.errno ?? '').toUpperCase()
+  const networkMsg = `${err?.message ?? ''} ${err?.cause?.message ?? ''}`.toLowerCase()
+  if (networkCode === 'ENOTFOUND' || networkCode === 'ECONNREFUSED' || networkCode === 'ETIMEDOUT' || networkMsg.includes('getaddrinfo') || networkMsg.includes('enotfound')) {
+    return { status: 503, message: ERROR_MESSAGES.network }
   }
   return { status: 500, message: ERROR_MESSAGES.server }
 }

@@ -3,7 +3,11 @@
  * AI must return a JSON array of { front: question, back: answer }.
  */
 
-export const FLASHCARDS_SYSTEM_PROMPT = `Sen Türk hukuku eğitimi için flashcard üreten bir asistanısın.
+import { LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX } from '@/lib/legal-education-master-prompt'
+
+export const FLASHCARDS_SYSTEM_PROMPT = `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+Sen Türk hukuku eğitimi için flashcard üreten bir asistanısın.
 
 Görevin: Seçilen hukuk konusu için soru-cevap kartları üretmek.
 

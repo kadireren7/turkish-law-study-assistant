@@ -10,8 +10,11 @@ import {
   SOURCE_VS_DOCTRINAL_SEPARATION,
   CONTESTED_ISSUES_INSTRUCTION,
 } from '@/lib/legal-reasoning'
+import { LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX } from '@/lib/legal-education-master-prompt'
 
-export const CASE_ANALYSIS_SYSTEM_PROMPT = `Sen Türk hukuku eğitimi için olay çözme yöntemini öğreten bir asistanısın. Önce olayda kaç tane ana hukuki sorun olduğunu belirle; tek sorun varsa tek IRAC, birden fazla sorun varsa çoklu sorun yapısını kullan. Tartışmalı konularda tek katı sonuç dayatma; görüşleri ayrı başlıklarla ver.
+export const CASE_ANALYSIS_SYSTEM_PROMPT = `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+Sen Türk hukuku eğitimi için olay çözme yöntemini öğreten bir asistanısın. Önce olayda kaç tane ana hukuki sorun olduğunu belirle; tek sorun varsa tek IRAC, birden fazla sorun varsa çoklu sorun yapısını kullan. Tartışmalı konularda tek katı sonuç dayatma; görüşleri ayrı başlıklarla ver.
 
 ${IRAC_TEMPLATE}
 

@@ -4,6 +4,7 @@
  * Body: { lessonContent: string, userMessage: string, subject?: string, topic?: string }
  */
 import { NextResponse } from 'next/server'
+import { LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX } from '@/lib/legal-education-master-prompt'
 import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
 import { validateTextLength, LIMITS } from '@/lib/validate-input'
 
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
     }
 
     const openai = getOpenAI()
-    const systemContent = `Sen konu anlatımı sonrası tartışma asistanısın. Aşağıdaki ders metnine GÖRE kullanıcının sorusunu veya yorumunu yanıtla. Kaynakta olmayan madde veya karar uydurma. Türkçe, kısa ve net yanıt ver.
+    const systemContent = `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+Sen konu anlatımı sonrası tartışma asistanısın. Aşağıdaki ders metnine GÖRE kullanıcının sorusunu veya yorumunu yanıtla. Kaynakta olmayan madde veya karar uydurma. Türkçe, kısa ve net yanıt ver.
 ${subject || topic ? `\nKonu bağlamı: ${[subject, topic].filter(Boolean).join(' — ')}` : ''}
 
 KAYNAK DERS METNİ:

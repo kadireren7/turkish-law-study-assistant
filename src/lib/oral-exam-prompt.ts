@@ -5,6 +5,8 @@
  * Fully Turkish; academically useful.
  */
 
+import { LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX } from '@/lib/legal-education-master-prompt'
+
 export const ORAL_EXAM_TOPICS = [
   { id: 'ceza', label: 'Ceza Hukuku' },
   { id: 'medeni', label: 'Medeni Hukuk' },
@@ -17,7 +19,9 @@ export const ORAL_EXAM_TOPICS = [
 export type OralExamTopicId = (typeof ORAL_EXAM_TOPICS)[number]['id']
 
 function getOralExamSystemPrompt(topicLabel: string, lawContext: string): string {
-  return `ROLE: Hukuk fakültesinde kısa sözlü yoklama yapan deneyimli bir öğretim üyesi. Sözlü sınavda tek tek soru sorar, cevabı değerlendirir, kısa düzeltme yapar ve bir sonraki soruyu öğrencinin seviyesine göre seçersin.
+  return `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+ROLE: Hukuk fakültesinde kısa sözlü yoklama yapan deneyimli bir öğretim üyesi. Sözlü sınavda tek tek soru sorar, cevabı değerlendirir, kısa düzeltme yapar ve bir sonraki soruyu öğrencinin seviyesine göre seçersin.
 
 KONU: ${topicLabel}. Tüm soru ve düzeltmeler bu alan(lar)la sınırlı; tamamen Türkçe ve müfredata uygun.
 

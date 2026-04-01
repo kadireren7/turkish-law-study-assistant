@@ -18,7 +18,7 @@ async function searchSerper(query: string, apiKey: string): Promise<WebSearchRes
       'X-API-KEY': apiKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ q: query, num: 8 }),
+    body: JSON.stringify({ q: query, num: 5 }),
   })
   if (!res.ok) throw new Error('Serper API ' + res.status)
   const data = (await res.json()) as { organic?: { title?: string; link?: string; snippet?: string }[] }
@@ -28,9 +28,9 @@ async function searchSerper(query: string, apiKey: string): Promise<WebSearchRes
     .map((o) => ({
       title: (o.title ?? '').trim(),
       url: (o.link ?? '').trim(),
-      snippet: (o.snippet ?? '').trim().slice(0, 400),
+      snippet: (o.snippet ?? '').trim().slice(0, 280),
     }))
-    .slice(0, 6)
+    .slice(0, 4)
 }
 
 /** Tavily Search API (AI-oriented). Genel arama; resmî siteler öncelikli değil, tüm web taranır. */
@@ -42,7 +42,7 @@ async function searchTavily(query: string, apiKey: string): Promise<WebSearchRes
       api_key: apiKey,
       query,
       search_depth: 'basic',
-      max_results: 6,
+      max_results: 4,
     }),
   })
   if (!res.ok) throw new Error('Tavily API ' + res.status)
@@ -53,9 +53,9 @@ async function searchTavily(query: string, apiKey: string): Promise<WebSearchRes
     .map((r) => ({
       title: (r.title ?? '').trim(),
       url: (r.url ?? '').trim(),
-      snippet: (r.content ?? '').trim().slice(0, 400),
+      snippet: (r.content ?? '').trim().slice(0, 280),
     }))
-    .slice(0, 6)
+    .slice(0, 4)
 }
 
 /** Mevzuat / kanun / madde içeren sorularda aramayı Türk mevzuat sitelerine yönlendirmek için ek terim. */

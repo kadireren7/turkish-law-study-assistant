@@ -3,195 +3,275 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChatMessage } from '@/components/ChatMessage'
 import { ConfidenceBadge } from '@/components/ConfidenceBadge'
-import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/ExplanationModeSwitcher'
-import { sendChatMessage } from '@/lib/api'
+import { sendChatMessage, type ChatMessage as ChatMsg } from '@/lib/api'
 import { stripConfidenceFromReplyContent, type ConfidenceLevel } from '@/lib/confidence'
+import type { ExplanationMode } from '@/components/ExplanationModeSwitcher'
 
-const ROTATING_PLACEHOLDERS = [
-  'Bir olay yaz, birlikte çözelim...',
-  'TCK 21\'i örnek olayla açıkla',
-  'Mülkiyet konusunda pratik soru üret',
-  'Ehliyet türlerini karşılaştır',
-  'Bu olayı sınav cevabı gibi değerlendir',
-  'Bir madde, kavram veya olay sor...',
-  'Sınav için kısa olay sorusu üret',
-]
+const CHAT_SESSION_KEY = 'studylaw:chat:session:v1'
 
-const PLACEHOLDER_INTERVAL_MS = 3500
+const STUDY_TOPICS = [
+  'Ceza hukuku',
+  'Borçlar hukuku',
+  'Medeni hukuk',
+  'Anayasa hukuku',
+  'İdare hukuku',
+  'Usul hukuku',
+] as const
 
-function TypingIndicator() {
+type Msg = {
+  role: 'user' | 'assistant'
+  content: string
+  sources?: string[]
+  sourceLabels?: string[]
+  lastChecked?: string | null
+  lowConfidence?: boolean
+  warnings?: string[]
+  confidence?: ConfidenceLevel
+  queryType?: string
+}
+
+function TypingMinimal() {
   return (
-    <div className="flex gap-3 animate-fade-in" role="status" aria-live="polite" aria-label="Yanıt hazırlanıyor">
-      <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-500/25 dark:to-emerald-500/25 flex items-center justify-center">
-        <span className="text-lg" aria-hidden>⚖️</span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <div className="rounded-2xl rounded-tl-md px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5 min-h-[52px]">
-          <span className="typing-dot w-2 h-2 rounded-full bg-teal-500 dark:bg-teal-400" />
-          <span className="typing-dot w-2 h-2 rounded-full bg-teal-500 dark:bg-teal-400" />
-          <span className="typing-dot w-2 h-2 rounded-full bg-teal-500 dark:bg-teal-400" />
-        </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400">Yanıt hazırlanıyor…</span>
+    <div className="flex justify-start animate-fade-in" role="status" aria-live="polite" aria-label="Yanıt hazırlanıyor">
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 px-4 py-3 flex items-center gap-1">
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
       </div>
     </div>
   )
 }
 
+function AssistantMeta({ msg }: { msg: Msg }) {
+  const displayLabels = (msg.sourceLabels ?? []).filter(
+    (l) => !(l && (l.includes('law-data') || l.endsWith('.md') || l.endsWith('.json')))
+  )
+  const showSources = displayLabels.length > 0 && msg.queryType && msg.queryType !== 'sohbet_genel'
+
+  return (
+    <div className="max-w-[min(100%,42rem)] space-y-1.5 pl-0">
+      {showSources && (
+        <p className="text-[11px] text-slate-500 dark:text-slate-500">
+          <span className="font-medium text-slate-600 dark:text-slate-400">Kaynak:</span> {displayLabels.join(', ')}
+        </p>
+      )}
+      {(msg.confidence || msg.lowConfidence) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
+          {msg.lowConfidence && (
+            <span className="text-[11px] text-amber-700 dark:text-amber-300">Yerel kaynakta eşleşme zayıf.</span>
+          )}
+        </div>
+      )}
+      {(msg.warnings?.length ?? 0) > 0 &&
+        msg.warnings!.map((w, j) => (
+          <p
+            key={j}
+            className="text-[11px] text-amber-900 dark:text-amber-200 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-lg px-2.5 py-1.5"
+          >
+            {w}
+          </p>
+        ))}
+    </div>
+  )
+}
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string; sources?: string[]; sourceLabels?: string[]; lastChecked?: string | null; lowConfidence?: boolean; warnings?: string[]; confidence?: ConfidenceLevel; queryType?: string }[]>([])
+  const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const [studyTopic, setStudyTopic] = useState<string | null>(null)
   const [explanationMode, setExplanationMode] = useState<ExplanationMode>('ogrenci')
   const bottomRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
+  const hasConversation = messages.length > 0
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CHAT_SESSION_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as {
+        messages?: Msg[]
+        input?: string
+        studyTopic?: string | null
+        explanationMode?: ExplanationMode
+      }
+      if (Array.isArray(parsed.messages)) setMessages(parsed.messages.slice(-40))
+      if (typeof parsed.input === 'string') setInput(parsed.input)
+      if (typeof parsed.studyTopic === 'string' || parsed.studyTopic === null) setStudyTopic(parsed.studyTopic ?? null)
+      if (parsed.explanationMode === 'ogrenci' || parsed.explanationMode === 'uyap') setExplanationMode(parsed.explanationMode)
+    } catch {
+      // ignore malformed session state
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        CHAT_SESSION_KEY,
+        JSON.stringify({
+          messages: messages.slice(-40),
+          input,
+          studyTopic,
+          explanationMode,
+        })
+      )
+    } catch {
+      // ignore storage failures
+    }
+  }, [messages, input, studyTopic, explanationMode])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setPlaceholderIndex((i) => (i + 1) % ROTATING_PLACEHOLDERS.length)
-    }, PLACEHOLDER_INTERVAL_MS)
-    return () => clearInterval(t)
-  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!input.trim() || loading) return
     const userMessage = input.trim()
     setInput('')
-    const newMessages: { role: 'user' | 'assistant'; content: string }[] = [
-      ...messages,
-      { role: 'user', content: userMessage },
-    ]
-    setMessages(newMessages)
+    const isFirst = messages.length === 0
+    const displayMessages: Msg[] = [...messages, { role: 'user', content: userMessage }]
+    setMessages(displayMessages)
     setLoading(true)
+
+    const apiMessages: ChatMsg[] = displayMessages.map((m, i) => {
+      if (m.role === 'user' && i === displayMessages.length - 1 && studyTopic && isFirst) {
+        return {
+          role: 'user',
+          content: `[Çalışma konusu: ${studyTopic}]\n\n${m.content}`,
+        }
+      }
+      return { role: m.role, content: m.content }
+    })
+
     try {
-      const { reply, sources, sourceLabels, lastChecked, lowConfidence, warnings, confidence, queryType } = await sendChatMessage(newMessages, { explanationMode })
+      const { reply, sources, sourceLabels, lastChecked, lowConfidence, warnings, confidence, queryType } =
+        await sendChatMessage(apiMessages, { explanationMode })
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: reply, sources, sourceLabels, lastChecked, lowConfidence, warnings, confidence, queryType },
       ])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sunucu tarafında bir hata oluştu. Lütfen tekrar deneyin.'
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: message },
-      ])
+      setMessages((prev) => [...prev, { role: 'assistant', content: message }])
     } finally {
       setLoading(false)
     }
   }
 
+  const composer = (
+    <form ref={formRef} onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm dark:shadow-none focus-within:ring-2 focus-within:ring-slate-300 dark:focus-within:ring-slate-600 focus-within:border-transparent transition-shadow">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              formRef.current?.requestSubmit()
+            }
+          }}
+          placeholder="Sorunuzu yazın…"
+          rows={hasConversation ? 2 : 5}
+          className="w-full resize-none bg-transparent px-4 py-3.5 text-[15px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none min-h-[52px] max-h-40 rounded-2xl"
+          disabled={loading}
+        />
+        <div className="flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 px-3 py-2">
+          <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800/80 p-0.5" role="group" aria-label="Anlatım tonu">
+            {(['ogrenci', 'uyap'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setExplanationMode(m)}
+                disabled={loading}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  explanationMode === m
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                {m === 'ogrenci' ? 'Sade' : 'Resmî'}
+              </button>
+            ))}
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="rounded-xl bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-medium text-white dark:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+          >
+            Gönder
+          </button>
+        </div>
+      </div>
+    </form>
+  )
+
   return (
-    <div className="flex flex-1 flex-col min-h-0 bg-slate-50/80 dark:bg-slate-900/95 transition-colors">
-      <header className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 sm:px-6 py-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Sohbet</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Olay çözün, kavram karşılaştırın; takip soruları ve mini pratikle çalışma ortağı gibi yanıt alın.
-            </p>
-          </div>
-          <ExplanationModeSwitcher
-            value={explanationMode}
-            onChange={setExplanationMode}
-          />
-        </div>
-      </header>
+    <div className="flex flex-1 flex-col min-h-0 bg-[var(--background)]">
+      {!hasConversation ? (
+        <div className="flex flex-1 flex-col min-h-0 items-center justify-center px-4 pb-8 pt-2 md:pt-6">
+          <div className="w-full max-w-2xl text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Ne çalışmak istersiniz?</h1>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">İsteğe bağlı konu seçin; ilk mesajınızda modele iletilir.</p>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-8">
-          {messages.length === 0 && (
-            <div className="text-center py-16 max-w-md mx-auto animate-fade-in">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-500/20 dark:to-emerald-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center text-2xl mx-auto mb-4 shadow-sm">
-                ⚖️
-              </div>
-              <p className="font-medium text-slate-700 dark:text-slate-200">Merhaba, hukuk öğrencisi.</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                Bir olay yazıp birlikte çözelim, madde sorun veya pratik soru isteyin. Takip soruları ve mini vakalarla sınav mantığını pekiştirin.
-              </p>
-            </div>
-          )}
-          {messages.map((msg, i) => (
-            <div key={i}>
-              <ChatMessage role={msg.role} content={msg.role === 'assistant' ? stripConfidenceFromReplyContent(msg.content) : msg.content} />
-              {msg.role === 'assistant' && (() => {
-                const displayLabels = (msg.sourceLabels ?? []).filter(
-                  (l) => !(l && (l.includes('law-data') || l.endsWith('.md') || l.endsWith('.json')))
-                )
-                if (displayLabels.length === 0 || !msg.queryType || msg.queryType === 'sohbet_genel') return null
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {STUDY_TOPICS.map((t) => {
+                const on = studyTopic === t
                 return (
-                  <div className="flex gap-3 mt-1">
-                    <div className="shrink-0 w-9" />
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      <span className="font-medium text-slate-600 dark:text-slate-300">Kullanılan kaynak:</span>{' '}
-                      {displayLabels.join(', ')}
-                    </div>
-                  </div>
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setStudyTopic(on ? null : t)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      on
+                        ? 'border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    {t}
+                  </button>
                 )
-              })()}
-              {msg.role === 'assistant' && (msg.confidence || msg.lowConfidence) && (
-                <div className="flex gap-3 mt-1">
-                  <div className="shrink-0 w-9" />
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
-                    {msg.lowConfidence && (
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Yerel kaynaklarda eşleşme bulunamadı.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {msg.role === 'assistant' && (msg.warnings?.length ?? 0) > 0 && (
-                <div className="flex gap-3 mt-1">
-                  <div className="shrink-0 w-9" />
-                  <div className="flex flex-col gap-1 mt-1">
-                    {msg.warnings!.map((w, j) => (
-                      <p key={j} className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl px-3 py-2">
-                        {w}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
+              })}
             </div>
-          ))}
-          {loading && <TypingIndicator />}
-          <div ref={bottomRef} className="h-2" />
-        </div>
-      </div>
 
-      <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 sm:p-4">
-        <form ref={formRef} onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  formRef.current?.requestSubmit()
-                }
-              }}
-              placeholder={ROTATING_PLACEHOLDERS[placeholderIndex]}
-              rows={1}
-              className="flex-1 min-h-[48px] max-h-32 rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-3 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-y bg-white dark:bg-slate-800 disabled:opacity-60 transition-all duration-200 shadow-sm"
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="btn-primary shrink-0 h-12 px-6 rounded-xl bg-teal-600 dark:bg-teal-500 text-white font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
-            >
-              Gönder
-            </button>
+            {studyTopic && (
+              <p className="mt-4 text-xs text-slate-500 dark:text-slate-500">
+                Seçili konu: <span className="font-medium text-slate-700 dark:text-slate-300">{studyTopic}</span>
+                {' · '}
+                <button type="button" onClick={() => setStudyTopic(null)} className="underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">
+                  Kaldır
+                </button>
+              </p>
+            )}
+
+            <div className="mt-10">{composer}</div>
           </div>
-        </form>
-      </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-6">
+              {messages.map((msg, i) => (
+                <div key={i} className="space-y-2">
+                  <ChatMessage
+                    variant="minimal"
+                    role={msg.role}
+                    content={msg.role === 'assistant' ? stripConfidenceFromReplyContent(msg.content) : msg.content}
+                  />
+                  {msg.role === 'assistant' && <AssistantMeta msg={msg} />}
+                </div>
+              ))}
+              {loading && <TypingMinimal />}
+              <div ref={bottomRef} className="h-px" />
+            </div>
+          </div>
+          <div className="shrink-0 border-t border-slate-200/80 dark:border-slate-800 bg-[var(--background)] pt-3 pb-4 md:pb-6 px-4">
+            {composer}
+          </div>
+        </>
+      )}
     </div>
   )
 }

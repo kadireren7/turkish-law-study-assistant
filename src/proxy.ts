@@ -1,12 +1,12 @@
 /**
- * Next.js middleware: güvenlik başlıkları ve API rate limiting.
- * Rate limit in-memory (per instance); production'da Vercel KV/Upstash önerilir.
+ * Next.js proxy: güvenlik başlıkları ve API rate limiting.
+ * Next 16'da middleware yerine proxy kullanılır.
  */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 dakika
-const RATE_LIMIT_MAX_REQUESTS = 40 // dakikada en fazla 40 istek (API için)
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+const RATE_LIMIT_MAX_REQUESTS = 40
 
 const apiRequestCounts = new Map<string, { count: number; resetAt: number }>()
 
@@ -32,26 +32,24 @@ function checkRateLimit(key: string): boolean {
   return true
 }
 
-// Eski kayıtları temizle (basit TTL)
 function cleanupRateLimitMap(): void {
   const now = Date.now()
   for (const [k, v] of apiRequestCounts.entries()) {
     if (now >= v.resetAt) apiRequestCounts.delete(k)
   }
 }
+
 if (typeof setInterval !== 'undefined') {
   setInterval(cleanupRateLimitMap, 60 * 1000)
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const res = NextResponse.next()
 
-  // Güvenlik başlıkları
   res.headers.set('X-Content-Type-Options', 'nosniff')
   res.headers.set('X-Frame-Options', 'DENY')
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
-  // API rate limiting
   const pathname = request.nextUrl.pathname
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/news-update')) {
     const key = getClientKey(request)
@@ -71,3 +69,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
+

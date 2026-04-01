@@ -4,7 +4,19 @@
  * integrated with legal source system and reasoning layer. Fully Turkish.
  */
 
-const LESSON_BASE = `ROLE: Hukuk fakültesinde ders veren deneyimli bir öğretim üyesi
+import {
+  LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX,
+  LEGAL_EDUCATION_TEACHING_PIPELINE,
+  LEGAL_EDUCATION_POLITICAL_HISTORY_AIDS,
+} from '@/lib/legal-education-master-prompt'
+
+const LESSON_BASE = `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+${LEGAL_EDUCATION_TEACHING_PIPELINE}
+
+${LEGAL_EDUCATION_POLITICAL_HISTORY_AIDS}
+
+ROLE: Hukuk fakültesinde ders veren deneyimli bir öğretim üyesi
 
 Sen Türkiye'deki hukuk fakültesi öğrencilerine, sınavlara hazırlık odaklı ders anlatan bir öğretim üyesisin. Anlatımın güçlü, sistematik ve akademik; kavramları adım adım açıklarsın, öğretideki farklı görüşleri ve uygulama yaklaşımlarını belirtirsin. Dil tamamen Türkçe; varsayılan modda sade ve öğrenci dostu, resmî dil modunda ise yapısal ve net olursun. Yalnızca aşağıdaki KANUN KAYNAK METİNLERİne dayanırsın; madde veya karar uydurmazsın.
 

@@ -14,9 +14,40 @@ import { getRandomVariationHints, buildVariationInstruction, getSubtopicFocusIns
 import { buildTopicLabel, type MainTopicId } from '@/lib/pratik-topic-config'
 import { getOpenAI, getMissingKeyMessage, handleOpenAIError } from '@/lib/openai'
 import { validateBodySize, validateTextLength, LIMITS } from '@/lib/validate-input'
+import { buildAdaptiveFocusLine, type MistakeTag, type PracticeDifficulty } from '@/lib/practice-adaptive'
+import { searchWeb, isWebSearchAvailable, formatWebSearchContext } from '@/lib/web-search'
+import { requiresLiveData } from '@/lib/live-data-classifier'
 
 const MAX_COUNT = 50
 const BATCH_SIZE = 10
+const MAX_GENERATE_ROUNDS = 4
+
+function normalizeQuestionForUniq(input: string): string {
+  return input
+    .toLocaleLowerCase('tr-TR')
+    .replace(/soru\s*\d+[:.)-]*/gi, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function uniqueQuestions(input: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const q of input) {
+    const key = normalizeQuestionForUniq(q)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(q.trim())
+  }
+  return out
+}
+
+function shouldUseWebForPractice(topic: string, questionType: string): boolean {
+  if (requiresLiveData(topic)) return true
+  if (questionType === 'guncel_gelisme') return true
+  return /yeni|son|guncel|güncel|degis|değiş|yururluk|yürürlük/i.test(topic)
+}
 
 function getQuestionTypeInstruction(type: string): string {
   switch (type) {
@@ -152,8 +183,10 @@ export async function POST(request: Request) {
       questionType?: string
       difficulty?: string
       questionStyle?: string
+      adaptiveDifficulty?: PracticeDifficulty
+      focusMistakes?: MistakeTag[]
     }
-    const mainTopic = body.mainTopic && ['medeni', 'borclar', 'ceza', 'anayasa', 'idare', 'cmk', 'hmk', 'karma'].includes(body.mainTopic) ? body.mainTopic : null
+    const mainTopic = body.mainTopic && ['medeni', 'borclar', 'ceza', 'anayasa', 'siyasi_tarih', 'idare', 'cmk', 'hmk', 'karma'].includes(body.mainTopic) ? body.mainTopic : null
     const subtopic = typeof body.subtopic === 'string' ? body.subtopic.trim() : ''
     const customTopic = typeof body.customTopic === 'string' ? body.customTopic.trim() : ''
     const useOnlyCustomTopic = Boolean(body.useOnlyCustomTopic) && !!customTopic
@@ -162,7 +195,7 @@ export async function POST(request: Request) {
     const topic = topicRaw || customTopic
     const count = Math.min(MAX_COUNT, Math.max(1, Math.floor(Number(body.count) || 1)))
     const questionType = (body.questionType ?? 'olay').toLowerCase()
-    const difficulty = (body.difficulty ?? 'karisik').toLowerCase()
+    const difficulty = (body.adaptiveDifficulty ?? body.difficulty ?? 'karisik').toLowerCase()
     const questionStyle = (body.questionStyle ?? 'tek_olay_tek_soru').toLowerCase()
 
     if (!topic) {
@@ -177,17 +210,27 @@ export async function POST(request: Request) {
 
     const { queryType, confidence: classificationConfidence } = await classifyQuery(`Sınav sorusu üret: ${topic}`, openai)
     const lawContext = await getLawDatabaseContextShort()
-    const systemContent = buildSystemContentWithSources(
+    let systemContent = buildSystemContentWithSources(
       EXAM_QUESTION_GENERATOR_PROMPT,
       lawContext,
       DEFAULT_MEVZUAT_SOURCE_BLOCK
     )
+    let sourcesUsed: string[] = []
+    if (isWebSearchAvailable() && shouldUseWebForPractice(topic, questionType)) {
+      const webResults = await searchWeb(`${topic} hukuk güncel değişiklik yürürlük`)
+      if (webResults.length > 0) {
+        systemContent += `\n\n${formatWebSearchContext(webResults)}\n\nWEB GÜNCELLİK KURALI: Soru üretirken yukarıdaki güncel kaynak bloklarını dikkate al. Kaynakta net olmayan bir güncel iddia üretme.`
+        sourcesUsed = webResults.slice(0, 5).map((w) => w.url)
+      }
+    }
 
     const typeInstruction = getQuestionTypeInstruction(questionType)
     const diffInstruction = getDifficultyInstruction(difficulty)
     const styleInstruction = getQuestionStyleInstruction(questionStyle)
     const variationHints = getRandomVariationHints()
     const variationBlock = buildVariationInstruction(variationHints)
+    const focusMistakes = Array.isArray(body.focusMistakes) ? body.focusMistakes : []
+    const adaptiveFocusLine = buildAdaptiveFocusLine(focusMistakes)
     const subtopicInstruction = mainTopic && subtopic ? getSubtopicFocusInstruction(mainTopic, subtopic) : ''
     const multiDimensionRequired =
       questionStyle === 'tek_olay_cok_soru' ||
@@ -221,6 +264,7 @@ export async function POST(request: Request) {
         styleInstruction,
         diffInstruction,
         multiDimensionLine,
+        adaptiveFocusLine,
         `Varyasyon: ${variationBlock}`,
         'Önce tam olarak "SENARYO:" yazıp alt satırda tek bir olay/senaryo yaz. Sonra mutlaka "SORU 1:", "SORU 2:", "SORU 3:", "SORU 4:" (veya 5) şeklinde numaralayıp her biri için aynı olaydan bir alt soru yaz. Her alt soru farklı hukuki açıdan olsun. Yanıtında sadece SENARYO: metni ve SORU 1:, SORU 2:, ... metinlerini ver; başka açıklama ekleme.',
       ].filter(Boolean).join(' ')
@@ -230,8 +274,8 @@ export async function POST(request: Request) {
           { role: 'system', content: systemContent },
           { role: 'user', content: userContent },
         ],
-        temperature: 0.7,
-        max_tokens: 4096,
+        temperature: 0.35,
+        max_tokens: 2400,
       })
       const raw = completion.choices[0]?.message?.content?.trim() ?? ''
       if (!raw) {
@@ -247,6 +291,7 @@ export async function POST(request: Request) {
         mode: 'tek_olay_cok_soru',
         topic,
         questionStyle,
+        ...(sourcesUsed.length > 0 && { sourcesUsed }),
         classification: { category: queryType, confidence: classificationConfidence },
       })
     }
@@ -268,6 +313,7 @@ export async function POST(request: Request) {
         diffInstruction,
         stylePart,
         multiDimensionLine,
+        adaptiveFocusLine,
         `Varyasyon (bu soruda uygula): ${variationBlock}`,
         'Yanıtında sadece "SORU:" ile başlayıp soru metnini yaz. Cevap veya açıklama ekleme.',
       ].filter(Boolean).join(' ')
@@ -277,8 +323,8 @@ export async function POST(request: Request) {
           { role: 'system', content: systemContent },
           { role: 'user', content: userContent },
         ],
-        temperature: 0.72,
-        max_tokens: 1024,
+        temperature: 0.32,
+        max_tokens: 800,
       })
 
       let question = completion.choices[0]?.message?.content?.trim() ?? ''
@@ -288,17 +334,24 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({
         question,
+        ...(sourcesUsed.length > 0 && { sourcesUsed }),
         classification: { category: queryType, confidence: classificationConfidence },
       })
     }
 
     const allQuestions: string[] = []
     let remaining = count
-    while (remaining > 0) {
+    let round = 0
+    while (remaining > 0 && round < MAX_GENERATE_ROUNDS) {
+      round += 1
       const want = Math.min(remaining, BATCH_SIZE)
       const batchVariation = getRandomVariationHints()
       const batchVariationBlock = buildVariationInstruction(batchVariation)
       const outputFormat = getOutputFormatForType(questionType)
+      const bannedList = uniqueQuestions(allQuestions)
+        .slice(-8)
+        .map((q, i) => `${i + 1}) ${q}`)
+        .join('\n')
       const userContent = [
         `Şu konu için tam ${want} adet soru üret: "${topic}".`,
         strictScopeLine,
@@ -310,7 +363,9 @@ export async function POST(request: Request) {
         diffInstruction,
         styleInstruction,
         multiDimensionLine,
+        adaptiveFocusLine,
         `Önemli: Her soruda FARKLI olay türü, FARKLI hukuki çatışma ve FARKLI ifade tarzı kullan; tekrara düşme. Bu batch için örnek yön: ${batchVariationBlock}`,
+        bannedList ? `Aşağıdaki önceki sorulara BENZER soru üretme:\n${bannedList}` : '',
         `Her soruyu "SORU 1:", "SORU 2:", ... diye numaralayıp sadece soru metnini yaz. Cevap veya açıklama ekleme.`,
       ].filter(Boolean).join(' ')
       const completion = await openai.chat.completions.create({
@@ -319,15 +374,18 @@ export async function POST(request: Request) {
           { role: 'system', content: systemContent },
           { role: 'user', content: userContent },
         ],
-        temperature: 0.78,
-        max_tokens: want * 600,
+        temperature: 0.36,
+        max_tokens: Math.min(2400, want * 420),
       })
 
       const raw = completion.choices[0]?.message?.content?.trim() ?? ''
       const parsed = parseMultipleQuestions(raw)
-      for (const q of parsed) {
+      for (const q of uniqueQuestions(parsed)) {
         if (allQuestions.length < count) allQuestions.push(q)
       }
+      const deduped = uniqueQuestions(allQuestions)
+      allQuestions.length = 0
+      allQuestions.push(...deduped)
       remaining = count - allQuestions.length
       if (remaining <= 0 || parsed.length === 0) break
     }
@@ -340,6 +398,7 @@ export async function POST(request: Request) {
       topic,
       questionType,
       difficulty,
+      ...(sourcesUsed.length > 0 && { sourcesUsed }),
       classification: { category: queryType, confidence: classificationConfidence },
     })
   } catch (e) {

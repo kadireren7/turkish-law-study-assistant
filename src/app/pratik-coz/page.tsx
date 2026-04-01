@@ -6,14 +6,17 @@
  * (2) generateRequestIdRef / evaluateRequestIdRef ile gelen yanıt yalnızca en güncel isteğe aitse state güncellenir.
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { generateExamQuestion, generateExamQuestions, generateExamScenarioWithSubQuestions, evaluateExamAnswer, generateQuiz, type ExamEvaluation } from '@/lib/api'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { savePracticeQuestion, getSavedQuestionById } from '@/lib/saved-practice-questions'
+import { generateExamQuestion, generateExamQuestions, generateExamScenarioWithSubQuestions, evaluateExamAnswer, generateQuiz, type ExamEvaluation, type ExamGenerateResult } from '@/lib/api'
 import { ConfidenceBadge } from '@/components/ConfidenceBadge'
 import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/ExplanationModeSwitcher'
 import { recordPractice } from '@/lib/study-engine'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS } from '@/lib/exam-practice-prompt'
 import { MAIN_TOPICS, getSubtopics, buildTopicLabel, QUESTION_STYLES, type MainTopicId } from '@/lib/pratik-topic-config'
 import { printPracticeSet, printQuizSet, slugForFilename, dateSlugForFilename } from '@/lib/export-questions'
+import type { MistakeTag, PracticeDifficulty } from '@/lib/practice-adaptive'
 
 export type PracticeMode = 'klasik' | 'coktan' | 'dogruyanlis'
 
@@ -21,8 +24,11 @@ type QuizQuestion = { question: string; options: string[]; correct: string; expl
 
 const QUIZ_COUNT_OPTIONS = [5, 10, 15, 20] as const
 const letters = ['A', 'B', 'C', 'D']
+const PRACTICE_SESSION_KEY = 'studylaw:practice:session:v1'
 
-export default function PratikCozPage() {
+function PratikCozPageInner() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('klasik')
   const [mainTopicId, setMainTopicId] = useState<MainTopicId>('ceza')
   const [subtopic, setSubtopic] = useState<string>(getSubtopics('ceza')[0]?.value ?? '')
@@ -31,6 +37,9 @@ export default function PratikCozPage() {
   const [questionStyle, setQuestionStyle] = useState<string>('tek_olay_tek_soru')
   const [questionType, setQuestionType] = useState<string>('olay')
   const [difficulty, setDifficulty] = useState<string>('karisik')
+  const [adaptiveDifficulty, setAdaptiveDifficulty] = useState<PracticeDifficulty>('karisik')
+  const [focusMistakes, setFocusMistakes] = useState<MistakeTag[]>([])
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [questionCount, setQuestionCount] = useState<number>(1)
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
   const [quizSelected, setQuizSelected] = useState<Record<number, string>>({})
@@ -41,6 +50,7 @@ export default function PratikCozPage() {
   const generateRequestIdRef = useRef(0)
   const evaluateInFlightRef = useRef(false)
   const evaluateRequestIdRef = useRef(0)
+  const practiceStateLoadedRef = useRef(false)
   const [scenario, setScenario] = useState('')
   const [subQuestions, setSubQuestions] = useState<string[]>([])
   const [question, setQuestion] = useState('')
@@ -48,6 +58,7 @@ export default function PratikCozPage() {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [userAnswer, setUserAnswer] = useState('')
   const [evaluation, setEvaluation] = useState<ExamEvaluation | null>(null)
+  const [lastGenerateSources, setLastGenerateSources] = useState<string[]>([])
   const [loadingGenerate, setLoadingGenerate] = useState(false)
   const [loadingEvaluate, setLoadingEvaluate] = useState(false)
   const [error, setError] = useState('')
@@ -65,6 +76,10 @@ export default function PratikCozPage() {
     if (practiceMode === 'dogruyanlis') setQuestionType('dogruyanlis')
     if (practiceMode === 'coktan' && !(QUIZ_COUNT_OPTIONS as readonly number[]).includes(questionCount)) setQuestionCount(5)
   }, [practiceMode])
+  useEffect(() => {
+    const d = difficulty as PracticeDifficulty
+    if (d === 'kolay' || d === 'orta' || d === 'zor' || d === 'karisik') setAdaptiveDifficulty(d)
+  }, [difficulty])
 
   const isTekOlayCokSoru = questionStyle === 'tek_olay_cok_soru'
   const hasScenarioMode = scenario && subQuestions.length > 0
@@ -79,6 +94,131 @@ export default function PratikCozPage() {
     const first = subtopics[0]
     if (first && subtopics.every((s) => s.value !== subtopic)) setSubtopic(first.value)
   }, [mainTopicId, subtopics, subtopic])
+
+  useEffect(() => {
+    const qpMain = searchParams.get('mainTopic')
+    if (!qpMain) return
+    const valid = MAIN_TOPICS.some((t) => t.id === qpMain)
+    if (!valid) return
+    const nextMain = qpMain as MainTopicId
+    setMainTopicId(nextMain)
+    const firstSub = getSubtopics(nextMain)[0]
+    if (firstSub) setSubtopic(firstSub.value)
+  }, [searchParams])
+
+  useEffect(() => {
+    const sid = searchParams.get('saved')
+    if (sid) {
+      const item = getSavedQuestionById(sid)
+      if (!item) {
+        router.replace('/pratik-coz', { scroll: false })
+        return
+      }
+      setPracticeMode('klasik')
+      if (item.scenario || (item.subQuestions && item.subQuestions.length)) {
+        setScenario(item.scenario ?? '')
+        setSubQuestions(item.subQuestions ?? [])
+        setQuestion('')
+        setQuestions([])
+      } else {
+        setQuestion(item.question)
+        setQuestions([])
+        setScenario('')
+        setSubQuestions([])
+      }
+      setQuestionIndex(0)
+      setUserAnswer('')
+      setEvaluation(null)
+      setError('')
+      practiceStateLoadedRef.current = true
+      router.replace('/pratik-coz', { scroll: false })
+      return
+    }
+
+    if (practiceStateLoadedRef.current) return
+    practiceStateLoadedRef.current = true
+
+    try {
+      const raw = localStorage.getItem(PRACTICE_SESSION_KEY)
+      if (!raw) return
+      const s = JSON.parse(raw) as Record<string, unknown>
+      if (s.practiceMode === 'klasik' || s.practiceMode === 'coktan' || s.practiceMode === 'dogruyanlis') setPracticeMode(s.practiceMode)
+      if (typeof s.mainTopicId === 'string') setMainTopicId(s.mainTopicId as MainTopicId)
+      if (typeof s.subtopic === 'string') setSubtopic(s.subtopic)
+      if (typeof s.customTopic === 'string') setCustomTopic(s.customTopic)
+      if (typeof s.useOnlyCustomTopic === 'boolean') setUseOnlyCustomTopic(s.useOnlyCustomTopic)
+      if (typeof s.questionStyle === 'string') setQuestionStyle(s.questionStyle)
+      if (typeof s.questionType === 'string') setQuestionType(s.questionType)
+      if (typeof s.difficulty === 'string') setDifficulty(s.difficulty)
+      if (typeof s.questionCount === 'number') setQuestionCount(Math.min(20, Math.max(1, s.questionCount)))
+      if (Array.isArray(s.quizQuestions)) setQuizQuestions(s.quizQuestions as QuizQuestion[])
+      if (s.quizSelected && typeof s.quizSelected === 'object') setQuizSelected(s.quizSelected as Record<number, string>)
+      if (typeof s.quizTestEnded === 'boolean') setQuizTestEnded(s.quizTestEnded)
+      if (typeof s.quizResultsRevealed === 'boolean') setQuizResultsRevealed(s.quizResultsRevealed)
+      if (typeof s.scenario === 'string') setScenario(s.scenario)
+      if (Array.isArray(s.subQuestions)) setSubQuestions(s.subQuestions as string[])
+      if (typeof s.question === 'string') setQuestion(s.question)
+      if (Array.isArray(s.questions)) setQuestions(s.questions as string[])
+      if (typeof s.questionIndex === 'number') setQuestionIndex(s.questionIndex)
+      if (typeof s.userAnswer === 'string') setUserAnswer(s.userAnswer)
+      if (Array.isArray(s.lastGenerateSources)) setLastGenerateSources(s.lastGenerateSources as string[])
+    } catch {
+      // ignore malformed session state
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PRACTICE_SESSION_KEY,
+        JSON.stringify({
+          practiceMode,
+          mainTopicId,
+          subtopic,
+          customTopic,
+          useOnlyCustomTopic,
+          questionStyle,
+          questionType,
+          difficulty,
+          questionCount,
+          quizQuestions,
+          quizSelected,
+          quizTestEnded,
+          quizResultsRevealed,
+          scenario,
+          subQuestions,
+          question,
+          questions,
+          questionIndex,
+          userAnswer,
+          lastGenerateSources,
+        })
+      )
+    } catch {
+      // ignore storage failures
+    }
+  }, [
+    practiceMode,
+    mainTopicId,
+    subtopic,
+    customTopic,
+    useOnlyCustomTopic,
+    questionStyle,
+    questionType,
+    difficulty,
+    questionCount,
+    quizQuestions,
+    quizSelected,
+    quizTestEnded,
+    quizResultsRevealed,
+    scenario,
+    subQuestions,
+    question,
+    questions,
+    questionIndex,
+    userAnswer,
+    lastGenerateSources,
+  ])
 
   useEffect(() => {
     if (hasMultiple) {
@@ -105,6 +245,7 @@ export default function PratikCozPage() {
     setQuestionIndex(0)
     setUserAnswer('')
     setEvaluation(null)
+    setLastGenerateSources([])
     try {
       const effectiveQuestionType = practiceMode === 'dogruyanlis' ? 'dogruyanlis' : (questionType as 'olay' | 'madde' | 'klasik' | 'coktan' | 'dogruyanlis' | 'karma')
       const opts = {
@@ -115,21 +256,78 @@ export default function PratikCozPage() {
         subtopic: subtopic || undefined,
         customTopic: customTopic.trim() || undefined,
         useOnlyCustomTopic: useOnlyCustomTopic && !!customTopic.trim(),
+        adaptiveDifficulty,
+        focusMistakes,
       }
       if (isTekOlayCokSoru) {
-        const { scenario: s, subQuestions: sq } = await generateExamScenarioWithSubQuestions(topic, opts)
+        const res = await fetch('/api/exam-practice/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            questionStyle: 'tek_olay_cok_soru',
+            questionType: opts.questionType ?? 'olay',
+            difficulty: opts.difficulty ?? 'karisik',
+            mainTopic: opts.mainTopic,
+            subtopic: opts.subtopic,
+            customTopic: opts.customTopic,
+            useOnlyCustomTopic: opts.useOnlyCustomTopic,
+            adaptiveDifficulty: opts.adaptiveDifficulty,
+            focusMistakes: opts.focusMistakes,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error((data && data.error) || 'Senaryo oluşturulamadı')
+        const payload = (data?.ok ? data.data : data) as ExamGenerateResult
+        const s = payload.scenario ?? ''
+        const sq = payload.subQuestions ?? []
         if (generateRequestIdRef.current !== requestId) return
         setScenario(s)
         setSubQuestions(sq)
+        setLastGenerateSources(Array.isArray(payload.sourcesUsed) ? payload.sourcesUsed : [])
+        const preview = sq[0]?.trim() || s.slice(0, 280)
+        if (preview)
+          savePracticeQuestion({
+            topic: topic.trim(),
+            question: preview,
+            scenario: s || undefined,
+            subQuestions: sq.length ? sq : undefined,
+          })
       } else if (questionCount > 1) {
-        const list = await generateExamQuestions(topic, questionCount, opts)
+        const res = await fetch('/api/exam-practice/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            count: Math.min(50, Math.max(1, questionCount)),
+            questionType: opts.questionType ?? 'olay',
+            difficulty: opts.difficulty ?? 'karisik',
+            questionStyle: opts.questionStyle ?? 'tek_olay_tek_soru',
+            mainTopic: opts.mainTopic,
+            subtopic: opts.subtopic,
+            customTopic: opts.customTopic,
+            useOnlyCustomTopic: opts.useOnlyCustomTopic,
+            adaptiveDifficulty: opts.adaptiveDifficulty,
+            focusMistakes: opts.focusMistakes,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error((data && data.error) || 'Sorular oluşturulamadı')
+        const payload = (data?.ok ? data.data : data) as ExamGenerateResult
+        const list = Array.isArray(payload.questions) ? payload.questions : []
         if (generateRequestIdRef.current !== requestId) return
         setQuestions(list)
         setQuestion(list[0] ?? '')
+        setLastGenerateSources(Array.isArray(payload.sourcesUsed) ? payload.sourcesUsed : [])
+        for (const qItem of list.slice(0, 10)) {
+          savePracticeQuestion({ topic: topic.trim(), question: qItem })
+        }
       } else {
         const q = await generateExamQuestion(topic, opts)
         if (generateRequestIdRef.current !== requestId) return
         setQuestion(q)
+        setLastGenerateSources([])
+        if (q.trim()) savePracticeQuestion({ topic: topic.trim(), question: q })
       }
     } catch (err) {
       if (generateRequestIdRef.current !== requestId) return
@@ -153,7 +351,11 @@ export default function PratikCozPage() {
       const data = await generateQuiz(topic, questionCount, {
         difficulty: difficulty as 'kolay' | 'orta' | 'zor' | 'karisik',
       })
-      setQuizQuestions(data.questions ?? [])
+      const qs = data.questions ?? []
+      setQuizQuestions(qs)
+      for (const qq of qs.slice(0, 15)) {
+        savePracticeQuestion({ topic: topic.trim(), question: qq.question })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Test oluşturulamadı.')
       setQuizQuestions([])
@@ -179,6 +381,7 @@ export default function PratikCozPage() {
       const result = await evaluateExamAnswer(displayQuestion, userAnswer.trim(), topic, {
         explanationMode,
         ...(hasScenarioMode && scenario ? { scenario } : {}),
+        currentDifficulty: adaptiveDifficulty,
       })
       if (evaluateRequestIdRef.current !== requestId) return
       setEvaluation(result)
@@ -189,6 +392,8 @@ export default function PratikCozPage() {
         missedPoints: result.missedPoints,
         legalErrors: result.legalErrors,
       })
+      if (result.nextDifficulty) setAdaptiveDifficulty(result.nextDifficulty)
+      if (Array.isArray(result.mistakeTags)) setFocusMistakes(result.mistakeTags)
     } catch (err) {
       if (evaluateRequestIdRef.current !== requestId) return
       setError(err instanceof Error ? err.message : 'Değerlendirme yapılamadı.')
@@ -207,7 +412,7 @@ export default function PratikCozPage() {
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-slate-50/80 dark:bg-slate-900/95 transition-colors">
       <header className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 sm:px-6 py-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Sınav Pratiği</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -215,18 +420,20 @@ export default function PratikCozPage() {
             </p>
           </div>
           {practiceMode !== 'coktan' && (
-            <ExplanationModeSwitcher
-              value={explanationMode}
-              onChange={setExplanationMode}
-              disabled={loadingEvaluate}
-            />
+            <div className="self-start sm:self-auto">
+              <ExplanationModeSwitcher
+                value={explanationMode}
+                onChange={setExplanationMode}
+                disabled={loadingEvaluate}
+              />
+            </div>
           )}
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-2xl mx-auto space-y-5">
+          <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm">
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Nasıl çalışmak istiyorsunuz?</p>
             <div className="flex flex-wrap gap-2">
               {(
@@ -254,7 +461,7 @@ export default function PratikCozPage() {
 
           {practiceMode === 'coktan' && (
             <>
-              <form onSubmit={handleGenerateQuiz} className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+              <form onSubmit={handleGenerateQuiz} className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm space-y-4">
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Konu ve ayarlar</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block">
@@ -405,15 +612,19 @@ export default function PratikCozPage() {
 
           {practiceMode !== 'coktan' && (
           <>
-          <form onSubmit={handleGenerate} className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <form onSubmit={handleGenerate} className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm space-y-4">
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Konu ve ayarlar</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Adaptif zorluk: <span className="font-medium">{adaptiveDifficulty}</span>
+              {focusMistakes.length > 0 ? ` · Hata odağı: ${focusMistakes.join(', ')}` : ''}
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <label className="block">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Ana konu</span>
                 <select
                   value={mainTopicId}
                   onChange={(e) => setMainTopicId(e.target.value as MainTopicId)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   disabled={loadingGenerate}
                 >
                   {MAIN_TOPICS.map((t) => (
@@ -426,7 +637,7 @@ export default function PratikCozPage() {
                 <select
                   value={subtopic}
                   onChange={(e) => setSubtopic(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   disabled={loadingGenerate}
                 >
                   {subtopics.map((s) => (
@@ -434,6 +645,29 @@ export default function PratikCozPage() {
                   ))}
                 </select>
               </label>
+              {!isTekOlayCokSoru && practiceMode !== 'dogruyanlis' && (
+                <label className="block">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">Soru sayısı</span>
+                  <select
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    disabled={loadingGenerate}
+                  >
+                    {[1, 2, 3, 5].map((n) => (
+                      <option key={n} value={n}>{n} soru</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <button
+                type="button"
+                className="sm:col-span-2 inline-flex items-center justify-start text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                onClick={() => setShowAdvanced((v) => !v)}
+              >
+                {showAdvanced ? 'Gelişmiş ayarları gizle' : 'Gelişmiş ayarları göster'}
+              </button>
+              {showAdvanced && (
               <label className="block sm:col-span-2">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Ek konu (isteğe bağlı)</span>
                 <input
@@ -455,7 +689,8 @@ export default function PratikCozPage() {
                   <span className="text-xs text-slate-500 dark:text-slate-400">Sadece yukarıdaki ek konuyu kullan</span>
                 </label>
               </label>
-              {practiceMode !== 'dogruyanlis' && (
+              )}
+              {showAdvanced && practiceMode !== 'dogruyanlis' && (
                 <>
                   <label className="block">
                     <span className="text-sm text-slate-600 dark:text-slate-300">Soru tarzı</span>
@@ -485,7 +720,7 @@ export default function PratikCozPage() {
                   </label>
                 </>
               )}
-              <label className="block">
+              {showAdvanced && <label className="block">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Zorluk</span>
                 <select
                   value={difficulty}
@@ -497,22 +732,7 @@ export default function PratikCozPage() {
                     <option key={d.value} value={d.value}>{d.label}</option>
                   ))}
                 </select>
-              </label>
-              {!isTekOlayCokSoru && practiceMode !== 'dogruyanlis' && (
-                <label className="block">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">Soru sayısı</span>
-                  <select
-                    value={questionCount}
-                    onChange={(e) => setQuestionCount(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    disabled={loadingGenerate}
-                  >
-                    {[1, 2, 3, 5].map((n) => (
-                      <option key={n} value={n}>{n} soru</option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              </label>}
             </div>
             <button
               type="submit"
@@ -627,6 +847,16 @@ export default function PratikCozPage() {
                 >
                   Word (.docx) indir
                 </button>
+                {lastGenerateSources.length > 0 && (
+                  <div className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Soru üretiminde kullanılan güncel kaynaklar</p>
+                    <ul className="space-y-1">
+                      {lastGenerateSources.map((s, i) => (
+                        <li key={`${s}-${i}`} className="text-xs text-slate-500 dark:text-slate-400 break-all">{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <form onSubmit={handleEvaluate} className="space-y-4">
@@ -763,6 +993,16 @@ export default function PratikCozPage() {
                   dangerouslySetInnerHTML={{ __html: evaluation.feedback.replace(/\n/g, '<br />') }}
                 />
               </details>
+              {evaluation.sourcesUsed && evaluation.sourcesUsed.length > 0 && (
+                <div className="mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Değerlendirmede kullanılan güncel kaynaklar</p>
+                  <ul className="space-y-1">
+                    {evaluation.sourcesUsed.map((s, i) => (
+                      <li key={`${s}-${i}`} className="text-xs text-slate-500 dark:text-slate-400 break-all">{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
           </>
@@ -770,5 +1010,13 @@ export default function PratikCozPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PratikCozPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">Yükleniyor…</div>}>
+      <PratikCozPageInner />
+    </Suspense>
   )
 }

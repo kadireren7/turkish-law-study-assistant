@@ -56,10 +56,14 @@ export async function getRetrievalResult(
   query: string,
   openai: OpenAI,
   topK: number = DEFAULT_TOP_K,
-  options?: { queryType?: QueryType }
+  options?: { queryType?: QueryType; topKOverride?: number }
 ): Promise<RetrievalResult> {
   const queryType = options?.queryType
-  const effectiveTopK = options?.queryType ? getTopKForQueryType(options.queryType) : topK
+  const baseK = options?.queryType ? getTopKForQueryType(options.queryType) : topK
+  const effectiveTopK =
+    typeof options?.topKOverride === 'number' && options.topKOverride > 0
+      ? Math.min(options.topKOverride, baseK)
+      : baseK
   const sourceTierOverrides = queryType ? SOURCE_TIER_BY_QUERY_TYPE[queryType] : undefined
   const allowedSourceGroups = queryType ? getSourceGroupsForQueryType(queryType) : undefined
   const rag: RagResult = await retrieveForQuery(query, openai, effectiveTopK, {

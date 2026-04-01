@@ -40,6 +40,26 @@ function parseQuizJson(raw: string, maxQuestions: number): QuizQuestion[] {
   return result.slice(0, maxQuestions)
 }
 
+function normalizeQuizQuestion(input: string): string {
+  return input
+    .toLocaleLowerCase('tr-TR')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function uniqueQuizQuestions(input: QuizQuestion[]): QuizQuestion[] {
+  const seen = new Set<string>()
+  const out: QuizQuestion[] = []
+  for (const q of input) {
+    const key = normalizeQuizQuestion(q.question)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(q)
+  }
+  return out
+}
+
 export async function POST(request: Request) {
   const sizeCheck = validateBodySize(request)
   if (!sizeCheck.ok) return NextResponse.json({ error: sizeCheck.error }, { status: sizeCheck.status })
@@ -83,26 +103,44 @@ export async function POST(request: Request) {
             ? 'Zorluk: Zor; tartışmalı noktalar veya birden fazla madde uygulaması.'
             : 'Zorluk: Karışık; kolay, orta ve zor sorulardan seç.'
 
-    const variationHints = getQuizVariationHints()
-    const variationBlock = buildQuizVariationInstruction(variationHints, count)
-    const userContent = `Şu hukuk konusu için ${count} çoktan seçmeli soru üret: "${topic}". ${difficultyLine} ${variationBlock} Yanıtını sadece JSON dizisi olarak ver.`
+    const questions: QuizQuestion[] = []
+    let attempts = 0
+    while (questions.length < count && attempts < 4) {
+      attempts += 1
+      const need = count - questions.length
+      const batch = Math.min(need, 5)
+      const variationHints = getQuizVariationHints()
+      const variationBlock = buildQuizVariationInstruction(variationHints, batch)
+      const avoidBlock = questions.length
+        ? `Şu soru gövdelerine benzer soru üretme: ${questions.slice(-6).map((q) => q.question).join(' | ')}`
+        : ''
+      const userContent =
+        `Şu hukuk konusu için ${batch} çoktan seçmeli soru üret: "${topic}". ${difficultyLine} ${variationBlock} ${avoidBlock} ` +
+        'Kurallar: Her soru farklı olay/kural üstünden gelsin; tekrar kalıbı kullanma. Yalnızca JSON dizisi ver.'
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemContent },
-        { role: 'user', content: userContent },
-      ],
-      temperature: 0.6,
-      max_tokens: count <= 5 ? 4096 : count <= 10 ? 8192 : 16384,
-    })
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemContent },
+          { role: 'user', content: userContent },
+        ],
+        temperature: 0.55,
+        max_tokens: 2800,
+      })
 
-    const raw = completion.choices[0]?.message?.content?.trim() ?? ''
-    if (!raw) {
-      return NextResponse.json({ error: 'Model yanıt vermedi' }, { status: 502 })
+      const raw = completion.choices[0]?.message?.content?.trim() ?? ''
+      if (!raw) continue
+      let parsed: QuizQuestion[] = []
+      try {
+        parsed = parseQuizJson(raw, batch)
+      } catch {
+        continue
+      }
+      const merged = uniqueQuizQuestions([...questions, ...parsed])
+      questions.length = 0
+      questions.push(...merged.slice(0, count))
     }
 
-    const questions = parseQuizJson(raw, count)
     if (questions.length === 0) {
       return NextResponse.json({ error: 'Model yanıtından sorular ayrıştırılamadı' }, { status: 502 })
     }

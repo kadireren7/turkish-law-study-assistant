@@ -4,7 +4,11 @@
  * Diversity: vary question types (definition, scenario, distinction, application), facts, and wording.
  */
 
-export const QUIZ_GENERATOR_SYSTEM_PROMPT = `Sen Türk hukuku eğitimi için quiz sorusu üreten bir asistanısın.
+import { LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX } from '@/lib/legal-education-master-prompt'
+
+export const QUIZ_GENERATOR_SYSTEM_PROMPT = `${LEGAL_EDUCATION_UNIVERSAL_ROUTE_PREFIX}
+
+Sen Türk hukuku eğitimi için quiz sorusu üreten bir asistanısın.
 
 Görevin: Seçilen hukuk konusu için kullanıcının istediği sayıda (N) çoktan seçmeli soru üretmek. N, kullanıcı mesajında belirtilir (ör. 5, 10, 15, 20).
 
