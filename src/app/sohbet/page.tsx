@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ChatMessage } from '@/components/ChatMessage'
-import { ConfidenceBadge } from '@/components/ConfidenceBadge'
+import { ChatMessage } from '@/components/chat/ChatMessage'
+import { ConfidenceBadge } from '@/components/exam/ConfidenceBadge'
 import { sendChatMessage, type ChatMessage as ChatMsg } from '@/lib/api'
 import { stripConfidenceFromReplyContent, type ConfidenceLevel } from '@/lib/confidence'
-import type { ExplanationMode } from '@/components/ExplanationModeSwitcher'
+import type { ExplanationMode } from '@/components/exam/ExplanationModeSwitcher'
 
 const CHAT_SESSION_KEY = 'studylaw:chat:session:v1'
 
@@ -44,7 +44,11 @@ function TypingMinimal() {
 
 function AssistantMeta({ msg }: { msg: Msg }) {
   const displayLabels = (msg.sourceLabels ?? []).filter(
-    (l) => !(l && (l.includes('law-data') || l.endsWith('.md') || l.endsWith('.json')))
+    (l) =>
+      !(
+        l &&
+        (l.includes('law-data') || l.includes('data/core') || l.endsWith('.md') || l.endsWith('.json'))
+      )
   )
   const showSources = displayLabels.length > 0 && msg.queryType && msg.queryType !== 'sohbet_genel'
 

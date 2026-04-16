@@ -1,12 +1,13 @@
 /**
- * Haberler sayfası: law-data/haberler içindeki JSON dosyalarını okur.
+ * Haberler sayfası: data/derived/news içindeki JSON dosyalarını okur.
  * Tüm kayıtlar gösterilir; en yeni tarih önce sıralanır.
  * Örnek/gerçek veri etiketlemesi ve kaynak şeffaflığı korunur.
  */
 import path from 'path'
 import fs from 'fs/promises'
+import { DERIVED_NEWS_DIR } from '@/lib/config/data-paths'
 
-const HABERLER_DIR = path.join(process.cwd(), 'law-data', 'haberler')
+const HABERLER_DIR = DERIVED_NEWS_DIR
 const HUKUK_PATH = path.join(HABERLER_DIR, 'hukuk-haberleri.json')
 const LAST_UPDATE_PATH = path.join(HABERLER_DIR, 'last-update.json')
 

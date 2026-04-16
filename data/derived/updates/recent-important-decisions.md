@@ -1,0 +1,24 @@
+---
+source: "Yargıtay / AYM karar veritabanları (update-legal-data script)"
+date: "2026-03-09"
+last_checked: "2026-03-09"
+legal_area: "Genel"
+confidence: "medium"
+---
+
+# Son Önemli Kararlar (Yakın Dönem İçtihat)
+
+Bu dosya, manuel eklenen veya script ile güncellenen karar özetlerini içerir. Resmî ve güncel metin için aşağıdaki karar arama kaynakları kullanılmalıdır.
+
+## Resmî kaynak önceliği (kararlar)
+
+- **Yargıtay Karar Arama** (öncelik 4, güncelleme: daily) – Yargıtay kararları bilgi bankası. İstinaf ve temyiz kararları için resmî kaynak.
+- **Anayasa Mahkemesi Kararlar Bilgi Bankası** (öncelik 5, güncelleme: daily) – AYM kararları ve iptal / itiraz sonuçları. Anayasa uyumluluk ve temel hak içtihatı.
+
+---
+
+Henüz karar özeti eklenmemiş. `data/derived/updates/input/decisions.json` dosyasına ekleyebilirsiniz.
+
+---
+
+*Güncel kararlar ilgili mahkeme sitelerinden kontrol edilmelidir.*

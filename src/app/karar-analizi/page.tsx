@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { analyzeDecision, type DecisionAnalysisResult } from '@/lib/api'
-import { ConfidenceBadge } from '@/components/ConfidenceBadge'
-import { ApiLoading } from '@/components/ApiLoading'
-import { ApiErrorBox } from '@/components/ApiErrorBox'
+import { ConfidenceBadge } from '@/components/exam/ConfidenceBadge'
+import { ApiLoading } from '@/components/ui/ApiLoading'
+import { ApiErrorBox } from '@/components/ui/ApiErrorBox'
 
 const MIN_INPUT_LENGTH = 40
 

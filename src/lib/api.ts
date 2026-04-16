@@ -219,8 +219,8 @@ export type LawSearchResult = {
   fromWeb?: boolean
 }
 
-export async function searchLawArticle(query: string): Promise<LawSearchResult> {
-  const res = await fetch(`${API_BASE}/law-search?q=${encodeURIComponent(query.trim())}`)
+export async function searchLawArticle(query: string, signal?: AbortSignal): Promise<LawSearchResult> {
+  const res = await fetch(`${API_BASE}/law-search?q=${encodeURIComponent(query.trim())}`, { signal })
   const data = await res.json().catch(() => ({}))
   if (!res.ok && res.status !== 200) {
     const msg = data.error ?? 'Madde araması başarısız'
@@ -320,6 +320,8 @@ export type ExamGenerateOptions = {
   useOnlyCustomTopic?: boolean
   adaptiveDifficulty?: import('@/lib/practice-adaptive').PracticeDifficulty
   focusMistakes?: import('@/lib/practice-adaptive').MistakeTag[]
+  /** Önceki isteği iptal etmek için (fetch AbortSignal). */
+  signal?: AbortSignal
 }
 
 export type ExamGenerateResult = {
@@ -337,6 +339,7 @@ export async function generateExamQuestion(
   const res = await fetch(`${API_BASE}/exam-practice/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: options?.signal,
     body: JSON.stringify({
       topic: topic.trim(),
       count: 1,
@@ -368,6 +371,7 @@ export async function generateExamQuestions(
   const res = await fetch(`${API_BASE}/exam-practice/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: options?.signal,
     body: JSON.stringify({
       topic: topic.trim(),
       count: Math.min(50, Math.max(1, count)),
@@ -400,6 +404,7 @@ export async function generateExamQuestionsDetailed(
   const res = await fetch(`${API_BASE}/exam-practice/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: options?.signal,
     body: JSON.stringify({
       topic: topic.trim(),
       count: Math.min(50, Math.max(1, count)),
@@ -437,6 +442,7 @@ export async function generateExamScenarioWithSubQuestions(
   const res = await fetch(`${API_BASE}/exam-practice/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: options?.signal,
     body: JSON.stringify({
       topic: topic.trim(),
       questionStyle: 'tek_olay_cok_soru',
@@ -470,11 +476,13 @@ export async function evaluateExamAnswer(
     explanationMode?: 'ogrenci' | 'uyap'
     scenario?: string
     currentDifficulty?: import('@/lib/practice-adaptive').PracticeDifficulty
+    signal?: AbortSignal
   }
 ): Promise<ExamEvaluation> {
   const res = await fetch(`${API_BASE}/exam-practice/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: options?.signal,
     body: JSON.stringify({
       question: question.trim(),
       userAnswer: userAnswer.trim(),

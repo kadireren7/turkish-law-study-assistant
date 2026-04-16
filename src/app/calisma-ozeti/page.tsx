@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { StudySummary } from '@/components/StudySummary'
+import { StudySummary } from '@/components/shared/StudySummary'
 
 export default function CalismaOzetiPage() {
   return (

@@ -10,7 +10,8 @@ import { retrieveForQuery, type RagResult, type ChunkRef, type SourceTierOverrid
 import { getSourceMetadata, toHumanReadableSourceLabels, isFromGuncellemeler } from '@/lib/source-metadata'
 import type { QueryType } from '@/lib/query-classifier'
 import { getSourceGroupsForQueryType } from '@/lib/source-routing'
-import { parseLawQuery, searchLawArticle } from '@/lib/law-search'
+import { parseLawQuery } from '@/lib/law-search-query'
+import { searchLawArticle, type LawSearchResult } from '@/lib/law-search'
 
 export type RetrievalResult = {
   context: string
@@ -47,6 +48,8 @@ const RETRIEVAL_ORDER_NOTE = `
 Öncelik sırası: (1) Doğrudan madde metni varsa önce onu kullan; (2) konu notları ve mevzuat parçaları; (3) karar özetleri ve güncel gelişmeler. Yanıtı Türkçe, yapılandırılmış ve sınav odaklı ver.
 `.trim()
 
+const MAX_DIRECT_ARTICLE_CHARS = 14_000
+
 /**
  * Single entry point for legal retrieval. Classifies query → selects source types →
  * retrieves only relevant legal sources. For article questions, injects direct madde
@@ -66,28 +69,34 @@ export async function getRetrievalResult(
       : baseK
   const sourceTierOverrides = queryType ? SOURCE_TIER_BY_QUERY_TYPE[queryType] : undefined
   const allowedSourceGroups = queryType ? getSourceGroupsForQueryType(queryType) : undefined
-  const rag: RagResult = await retrieveForQuery(query, openai, effectiveTopK, {
-    sourceTierOverrides,
-    allowedSourceGroups,
-  })
+
+  const parsed = parseLawQuery(query.trim())
+  const [rag, articleResult] = await Promise.all([
+    retrieveForQuery(query, openai, effectiveTopK, {
+      sourceTierOverrides,
+      allowedSourceGroups,
+    }),
+    parsed
+      ? searchLawArticle(parsed.code, parsed.article)
+      : Promise.resolve(null as LawSearchResult | null),
+  ])
+
   let context = rag.context
   const sourceLabelsHuman =
     rag.chunksUsed && rag.chunksUsed.length > 0
       ? toHumanReadableSourceLabels(rag.chunksUsed)
       : (await getSourceMetadata(rag.sources)).map((m) => m.lawName)
 
-  // Article-first: for madde/mevzuat questions, inject direct article text so the model always has it
-  if (queryType === 'madde_arama' || queryType === 'mevzuat_sorusu') {
-    const parsed = parseLawQuery(query)
-    if (parsed) {
-      const articleResult = await searchLawArticle(parsed.code, parsed.article)
-      if (articleResult.found && articleResult.maddeMetni) {
-        const header = `${articleResult.lawLabel} Madde ${articleResult.article}${articleResult.maddeBasligi ? ' – ' + articleResult.maddeBasligi : ''}`
-        const block = `[Doğrudan madde metni – öncelikli kaynak]\n${header}\n\n${articleResult.maddeMetni}`
-        context = block + (context ? '\n\n---\n\n' + RETRIEVAL_ORDER_NOTE + '\n\n' + context : '')
-        sourceLabelsHuman.unshift(`${articleResult.lawLabel} m.${articleResult.article} (doğrudan madde)`)
-      }
+  // Katman 1: Sorgu "TBK 2" gibi tanınabiliyorsa doğrudan madde metni (tüm soru tipleri).
+  if (parsed && articleResult?.found && articleResult.maddeMetni) {
+    let body = articleResult.maddeMetni
+    if (body.length > MAX_DIRECT_ARTICLE_CHARS) {
+      body = body.slice(0, MAX_DIRECT_ARTICLE_CHARS) + '\n\n[... metin kısaltıldı.]'
     }
+    const header = `${articleResult.lawLabel} Madde ${articleResult.article}${articleResult.maddeBasligi ? ' – ' + articleResult.maddeBasligi : ''}`
+    const block = `[Doğrudan madde metni – öncelikli kaynak]\n${header}\n\n${body}`
+    context = block + (context ? '\n\n---\n\n' + RETRIEVAL_ORDER_NOTE + '\n\n' + context : '')
+    sourceLabelsHuman.unshift(`${articleResult.lawLabel} m.${articleResult.article} (doğrudan madde)`)
   }
 
   return {

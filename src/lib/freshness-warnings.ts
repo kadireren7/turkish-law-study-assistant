@@ -7,8 +7,9 @@
 import path from 'path'
 import fs from 'fs/promises'
 import { getSourceMetadata } from '@/lib/source-metadata'
+import { DERIVED_UPDATES_DIR } from '@/lib/config/data-paths'
 
-const GUNCELLEMELER_DIR = path.join(process.cwd(), 'law-data', 'guncellemeler')
+const GUNCELLEMELER_DIR = DERIVED_UPDATES_DIR
 const UPDATE_LOG_PATH = path.join(GUNCELLEMELER_DIR, 'update-log.json')
 
 /** Consider "recent" amendment if detected within this many days. */

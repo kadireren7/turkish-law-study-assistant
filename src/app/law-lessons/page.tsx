@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { getLesson, sendLessonDiscuss, type LessonResult } from '@/lib/api'
-import { ConfidenceBadge } from '@/components/ConfidenceBadge'
+import { ConfidenceBadge } from '@/components/exam/ConfidenceBadge'
 import { LESSON_SUBJECTS } from '@/lib/lesson-prompt'
-import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/ExplanationModeSwitcher'
+import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/exam/ExplanationModeSwitcher'
 
 /** Section patterns for parsing professor-style output (8-section structure + legacy variants). */
 const SECTIONS = [

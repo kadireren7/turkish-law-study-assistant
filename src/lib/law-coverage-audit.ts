@@ -1,13 +1,14 @@
 /**
- * Coverage audit for law-data: reports index article counts, mevzuat presence,
+ * Coverage audit for canonical `data/core`: reports index article counts, mevzuat presence,
  * and missing areas. Use for systematic improvement (no copyrighted content).
  */
 import path from 'path'
 import fs from 'fs/promises'
+import { CORE_ARTICLE_INDEX_DIR, CORE_LAWS_DIR, CORE_TOPICS_DIR } from '@/lib/config/data-paths'
 
-const MEVZUAT_DIR = path.join(process.cwd(), 'law-data', 'mevzuat')
-const MADDE_INDEX_DIR = path.join(process.cwd(), 'law-data', 'madde-index')
-const KONU_NOTLARI_DIR = path.join(process.cwd(), 'law-data', 'konu-notlari')
+const MEVZUAT_DIR = CORE_LAWS_DIR
+const MADDE_INDEX_DIR = CORE_ARTICLE_INDEX_DIR
+const KONU_NOTLARI_DIR = CORE_TOPICS_DIR
 
 export type IndexCoverage = {
   lawCode: string

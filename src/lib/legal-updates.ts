@@ -1,15 +1,15 @@
 /**
  * Legal updates and news summary for the assistant.
- * Reads law-data/guncellemeler (amendments, decisions, update-log) and law-data/haberler/hukuk-haberleri.json
+ * Reads data/derived/updates (amendments, decisions, update-log) and data/derived/news/hukuk-haberleri.json
  * so the model answers current-legal questions from updated local data.
  * Populated by npm run daily:update (amendments:fetch, legal:update, news:update).
  */
 import path from 'path'
 import fs from 'fs/promises'
+import { DERIVED_NEWS_DIR, DERIVED_UPDATES_DIR } from '@/lib/config/data-paths'
 
-const LAW_DATA = path.join(process.cwd(), 'law-data')
-const GUNCELLEMELER_DIR = path.join(LAW_DATA, 'guncellemeler')
-const HABERLER_DIR = path.join(LAW_DATA, 'haberler')
+const GUNCELLEMELER_DIR = DERIVED_UPDATES_DIR
+const HABERLER_DIR = DERIVED_NEWS_DIR
 const UPDATE_LOG_PATH = path.join(GUNCELLEMELER_DIR, 'update-log.json')
 const HUKUK_HABERLERI_PATH = path.join(HABERLER_DIR, 'hukuk-haberleri.json')
 

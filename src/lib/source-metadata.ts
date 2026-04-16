@@ -1,12 +1,11 @@
 /**
- * Source transparency: parse frontmatter from law-data markdown and build
+ * Source transparency: parse frontmatter from canonical `data/` markdown and build
  * "Kullanılan kaynak" / "Güncellik notu" data for legal responses.
  * Human-readable labels: e.g. "Türk Ceza Kanunu (5237) m.21", "Konu Notu: Ceza Hukuku Genel Hükümler".
  */
 import path from 'path'
 import fs from 'fs/promises'
-
-const LAW_DATA_DIR = path.join(process.cwd(), 'law-data')
+import { normalizeDataRelativePath } from '@/lib/config/data-paths'
 
 export type SourceMeta = {
   filePath: string
@@ -95,7 +94,7 @@ function parseFrontmatter(content: string): { last_checked?: string; source?: st
  * Maps: mevzuat → law name + number, madde-index → law name, konu-notlari → topic title, guncellemeler → current developments label.
  */
 export function lawNameFromPath(relativePath: string): string {
-  const normalized = relativePath.replace(/^law-data[\\/]/, '').replace(/\\/g, '/')
+  const normalized = normalizeDataRelativePath(relativePath)
   const exact = PATH_TO_LAW_NAME[normalized]
   if (exact) return exact
   const base = path.basename(normalized, path.extname(normalized))
@@ -128,8 +127,8 @@ export function toHumanReadableLabel(filePath: string, heading?: string): string
   const madde = heading ? extractMaddeFromHeading(heading) : null
   if (madde) return `${name} m.${madde}`
   const normalized = filePath.replace(/\\/g, '/')
-  if (normalized.includes('konu-notlari/')) return name.startsWith('Konu Notu:') ? name : 'Konu Notu: ' + name
-  if (normalized.includes('guncellemeler/')) return name.startsWith('Güncel Gelişme:') ? name : 'Güncel Gelişme: ' + name
+  if (normalized.includes('konu-notlari/') || normalized.includes('core/topics/')) return name.startsWith('Konu Notu:') ? name : 'Konu Notu: ' + name
+  if (normalized.includes('guncellemeler/') || normalized.includes('derived/updates/')) return name.startsWith('Güncel Gelişme:') ? name : 'Güncel Gelişme: ' + name
   return name
 }
 
@@ -159,7 +158,7 @@ export function toHumanReadableSourceLabels(chunksUsed: { filePath: string; head
 const sourceMetaCache = new Map<string, SourceMeta>()
 
 /**
- * Load metadata for given law-data file paths (relative to cwd, e.g. law-data/mevzuat/tck.md).
+ * Load metadata for given data file paths (relative to cwd, e.g. data/core/laws/tck.md).
  * Results are cached by path so repeated requests for the same sources do not re-read files.
  */
 export async function getSourceMetadata(filePaths: string[]): Promise<SourceMeta[]> {
@@ -240,5 +239,8 @@ KULLANILAN KAYNAK BÖLÜMÜ (yanıtın mutlaka bu bölümle bitmeli):
 `.trim()
 
 export function isFromGuncellemeler(filePaths: string[]): boolean {
-  return filePaths.some((p) => p.includes('guncellemeler'))
+  return filePaths.some((p) => {
+    const n = p.replace(/\\/g, '/').toLowerCase()
+    return n.includes('guncellemeler') || n.includes('derived/updates/')
+  })
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ChatMessage } from '@/components/ChatMessage'
+import { ChatMessage } from '@/components/chat/ChatMessage'
 import { sendOralExamMessage } from '@/lib/api'
 import { ORAL_EXAM_TOPICS, type OralExamTopicId } from '@/lib/oral-exam-prompt'
 import { recordOralTopic } from '@/lib/study-engine'

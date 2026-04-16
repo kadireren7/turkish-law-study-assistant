@@ -1,13 +1,14 @@
 /**
- * Güncel Hukuk Gelişmeleri sayfası için law-data/guncellemeler içeriğini okur ve ayrıştırır.
+ * Güncel Hukuk Gelişmeleri sayfası için data/derived/updates içeriğini okur ve ayrıştırır.
  * - recent-amendments.md → son mevzuat değişiklikleri
  * - recent-important-decisions.md → önemli yeni kararlar
  * - update-log.json → son güncelleme zamanı
  */
 import path from 'path'
 import fs from 'fs/promises'
+import { DERIVED_UPDATES_DIR } from '@/lib/config/data-paths'
 
-const GUNCELLEMELER_DIR = path.join(process.cwd(), 'law-data', 'guncellemeler')
+const GUNCELLEMELER_DIR = DERIVED_UPDATES_DIR
 const AMENDMENTS_PATH = path.join(GUNCELLEMELER_DIR, 'recent-amendments.md')
 const DECISIONS_PATH = path.join(GUNCELLEMELER_DIR, 'recent-important-decisions.md')
 const UPDATE_LOG_PATH = path.join(GUNCELLEMELER_DIR, 'update-log.json')

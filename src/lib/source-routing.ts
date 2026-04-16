@@ -33,11 +33,17 @@ export const SOURCE_GROUP_LABELS: Record<SourceGroupId, string> = {
  */
 export function pathToSourceGroup(filePath: string): SourceGroupId {
   const n = filePath.replace(/\\/g, '/').toLowerCase()
-  if (n.includes('mevzuat/')) return 'mevzuat'
-  if (n.includes('madde-index/')) return 'madde-index'
-  if (n.includes('konu-notlari/')) return 'konu-notlari'
-  if (n.includes('guncellemeler/recent-important-decisions') || n.includes('recent-important-decisions')) return 'karar-ozetleri'
-  if (n.includes('guncellemeler/')) return 'guncel-gelismeler'
+  if (n.includes('mevzuat/') || n.includes('core/laws/')) return 'mevzuat'
+  if (n.includes('madde-index/') || n.includes('core/article-index/')) return 'madde-index'
+  if (n.includes('konu-notlari/') || n.includes('core/topics/')) return 'konu-notlari'
+  if (
+    n.includes('guncellemeler/recent-important-decisions') ||
+    n.includes('derived/updates/recent-important-decisions') ||
+    n.includes('recent-important-decisions')
+  )
+    return 'karar-ozetleri'
+  if (n.includes('karar-ozetleri/') || n.includes('cases/decision-summaries/')) return 'karar-ozetleri'
+  if (n.includes('guncellemeler/') || n.includes('derived/updates/')) return 'guncel-gelismeler'
   return 'konu-notlari'
 }
 

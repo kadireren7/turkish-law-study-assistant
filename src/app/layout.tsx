@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { ClientPersistenceInit } from '@/components/ClientPersistenceInit'
-import { Sidebar } from '@/components/Sidebar'
-import { ThemeProvider } from '@/components/ThemeProvider'
+import { ClientPersistenceInit } from '@/components/shared/ClientPersistenceInit'
+import { Sidebar } from '@/components/shared/Sidebar'
+import { ThemeProvider } from '@/components/ui/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'Hukuk Çalışma | Akıllı Hukuk Platformu',

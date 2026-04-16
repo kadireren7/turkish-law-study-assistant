@@ -1,5 +1,6 @@
 import path from 'path'
-import fs from 'fs/promises'
+import { readFileCachedUtf8 } from '@/lib/cache/legalFileCache'
+import { CORE_LAWS_DIR } from '@/lib/config/data-paths'
 
 /** Mevzuat files to load; order matters for priority in context. */
 const LAW_FILES = [
@@ -39,23 +40,28 @@ export const MEVZUAT_DISPLAY_LABELS: Record<string, string> = {
 let cachedContext: string | null = null
 let cachedShortContext: string | null = null
 
+export function invalidateLawDatabaseCache(): void {
+  cachedContext = null
+  cachedShortContext = null
+}
+
 /**
- * Loads law-data mevzuat and returns a single string for AI context.
+ * Loads canonical mevzuat (`data/core/laws`) and returns a single string for AI context.
  * Uses in-memory cache. Used by chat, case, exam-practice, lesson, quiz, flashcards.
  */
 export async function getLawDatabaseContext(): Promise<string> {
   if (cachedContext) return cachedContext
-  const baseDir = path.join(process.cwd(), 'law-data', 'mevzuat')
+  const baseDir = CORE_LAWS_DIR
   const parts: string[] = []
 
   for (const file of LAW_FILES) {
     try {
       const filePath = path.join(baseDir, file)
-      const content = await fs.readFile(filePath, 'utf-8')
+      const content = await readFileCachedUtf8(filePath)
       const name = MEVZUAT_DISPLAY_LABELS[file] ?? file.replace('.md', '').toUpperCase()
       parts.push(`## ${name}\n${content}`)
     } catch (e) {
-      console.warn(`law-data: could not read ${file}`, e)
+      console.warn(`mevzuat: could not read ${file}`, e)
     }
   }
 

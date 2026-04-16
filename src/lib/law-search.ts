@@ -1,5 +1,5 @@
 /**
- * Law article search (Madde Ara). Reads from law-data: madde-index first, then mevzuat.
+ * Law article search (Madde Ara). Reads from `data/core/article-index` first, then `data/core/laws`.
  * Normalizes input (tbk 2, TBK 2, TBK m.2, Türk Borçlar Kanunu 2). Official-source priority.
  *
  * Past "bilgi tabanında bulunamadı" causes: (1) parseLawQuery did not accept lowercase or
@@ -9,140 +9,18 @@
  * ## and ### in mevzuat, and add common articles to indexes.
  */
 import path from 'path'
-import fs from 'fs/promises'
+import { CORE_ARTICLE_INDEX_DIR, CORE_LAWS_DIR } from '@/lib/config/data-paths'
+import { readFileCachedUtf8 } from '@/lib/cache/legalFileCache'
+import { CODE_LABELS, getFilePath } from '@/lib/law-search-query'
 
-/** Canonical law codes used in file lookup. */
-const CODE_TO_FILE: Record<string, string> = {
-  TCK: 'tck.md',
-  TMK: 'tmk.md',
-  TBK: 'tbk.md',
-  ANAYASA: 'anayasa.md',
-  AY: 'anayasa.md',
-  İDARE: 'idare.md',
-  IDARE: 'idare.md',
-  CMK: 'cmk.md',
-  HMK: 'hmk.md',
-  İİK: 'iik.md',
-  IIK: 'iik.md',
-  TTK: 'ttk.md',
-  İYUK: 'idari-yargilama-usulu.md',
-  IYUK: 'idari-yargilama-usulu.md',
-  IS: 'is-kanunu.md',
-  İŞ: 'is-kanunu.md',
-  KABAHATLER: 'kabahatler.md',
-}
-
-const CODE_LABELS: Record<string, string> = {
-  TCK: 'Türk Ceza Kanunu (5237)',
-  TMK: 'Türk Medeni Kanunu (4721)',
-  TBK: 'Türk Borçlar Kanunu (6098)',
-  ANAYASA: 'Türkiye Cumhuriyeti Anayasası (2709)',
-  IDARE: 'İdare Hukuku',
-  CMK: 'Ceza Muhakemesi Kanunu (5271)',
-  HMK: 'Hukuk Muhakemeleri Kanunu (6100)',
-  IIK: 'İcra ve İflas Kanunu (2004)',
-  TTK: 'Türk Ticaret Kanunu (6102)',
-  IYUK: 'İdari Yargılama Usulü Kanunu (2577)',
-  IS: 'İş Kanunu (4857)',
-  KABAHATLER: 'Kabahatler Kanunu (5326)',
-}
-
-/**
- * Human-readable source label for UI (do not show raw file names).
- * Example: "Türk Borçlar Kanunu (6098) m.2", "T.C. Anayasası m.10".
- */
-export function getLawDisplayLabel(lawCode: string, article?: number): string {
-  const label = CODE_LABELS[lawCode] ?? lawCode
-  if (article != null) return `${label} m.${article}`
-  return label
-}
-
-/** Aliases: user input (lowercase, no dots) -> canonical code */
-const INPUT_ALIASES: Record<string, string> = {
-  tck: 'TCK',
-  tmk: 'TMK',
-  tbk: 'TBK',
-  anayasa: 'ANAYASA',
-  ay: 'ANAYASA',
-  cmk: 'CMK',
-  hmk: 'HMK',
-  iik: 'IIK',
-  ttk: 'TTK',
-  iyuk: 'IYUK',
-  idare: 'IDARE',
-  is: 'IS',
-  iş: 'IS',
-  kabahatler: 'KABAHATLER',
-}
-
-/** Long-form law names (case-insensitive prefix match) -> canonical code */
-const LONG_NAME_TO_CODE: Array<{ pattern: RegExp; code: string }> = [
-  { pattern: /^t\.?\s*c\.?\s*anayasa[sıi]/i, code: 'ANAYASA' },
-  { pattern: /^anayasa\s/i, code: 'ANAYASA' },
-  { pattern: /^türk\s*borçlar\s*kanunu/i, code: 'TBK' },
-  { pattern: /^türk\s*ceza\s*kanunu/i, code: 'TCK' },
-  { pattern: /^türk\s*medeni\s*kanunu/i, code: 'TMK' },
-  { pattern: /^ceza\s*muhakemesi\s*kanunu/i, code: 'CMK' },
-  { pattern: /^hukuk\s*muhakemeleri\s*kanunu/i, code: 'HMK' },
-  { pattern: /^i[çc]ra\s*ve\s*iflas\s*kanunu/i, code: 'IIK' },
-  { pattern: /^türk\s*ticaret\s*kanunu/i, code: 'TTK' },
-  { pattern: /^idari\s*yargilama/i, code: 'IYUK' },
-  { pattern: /^iş\s*kanunu/i, code: 'IS' },
-  { pattern: /^kabahatler\s*kanunu/i, code: 'KABAHATLER' },
-]
-
-/**
- * Normalize raw query for lookup: trim, collapse spaces, normalize dots so "m. 2" and "m.2" both work.
- * Supports: tbk 2, TBK 2, TBK m.2, Türk Borçlar Kanunu 2, anayasa 10 (lowercase/uppercase).
- * Returns { code: canonical code, article: number } or null.
- */
-export function parseLawQuery(query: string): { code: string; article: number } | null {
-  const trimmed = query
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\.\s*/g, '.')
-  if (!trimmed) return null
-
-  const numPart = '(\\d{1,4})'
-
-  // Long-form: "Türk Borçlar Kanunu 2", "T.C. Anayasası 10", "Anayasa 10"
-  const longMatch = trimmed.match(new RegExp(`^(.+?)\\s*(?:m\\.?|madde)?\\s*${numPart}$`, 'i'))
-  if (longMatch) {
-    const prefix = (longMatch[1] ?? '').trim()
-    const article = parseInt(longMatch[2], 10)
-    if (!isNaN(article)) {
-      for (const { pattern, code } of LONG_NAME_TO_CODE) {
-        if (pattern.test(prefix) && getFilePath(code)) return { code, article }
-      }
-    }
-  }
-
-  // Pattern: CODE (optional: m. or madde) NUMBER
-  const codePart = '(tck|tmk|tbk|anayasa|ay|cmk|hmk|iik|ttk|iyuk|idare|is|iş|kabahatler)'
-  const match1 = trimmed.match(new RegExp(`^${codePart}\\s*(?:m\\.?|madde)?\\s*${numPart}$`, 'i'))
-  if (match1) {
-    const codeKey = (match1[1] ?? '').toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ç/g, 'c')
-    const code = INPUT_ALIASES[codeKey] ?? (match1[1] ?? '').toUpperCase().replace(/İ/g, 'I')
-    const article = parseInt(match1[2], 10)
-    if (!isNaN(article) && code && getFilePath(code)) return { code, article }
-  }
-
-  // "2 tbk", "21 tck"
-  const match2 = trimmed.match(new RegExp(`^${numPart}\\s*${codePart}$`, 'i'))
-  if (match2) {
-    const codeKey = (match2[2] ?? '').toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ç/g, 'c')
-    const code = INPUT_ALIASES[codeKey] ?? (match2[2] ?? '').toUpperCase().replace(/İ/g, 'I')
-    const article = parseInt(match2[1], 10)
-    if (!isNaN(article) && code && getFilePath(code)) return { code, article }
-  }
-
-  return null
-}
-
-function getFilePath(code: string): string | null {
-  const file = CODE_TO_FILE[code] ?? CODE_TO_FILE[code.toUpperCase()]
-  return file ?? null
-}
+export {
+  parseLawQuery,
+  getLawDisplayLabel,
+  getFilePath,
+  buildRelatedArticleQueries,
+  CODE_LABELS,
+  CODE_TO_FILE,
+} from '@/lib/law-search-query'
 
 /** Match both ## Madde N and ### Madde N – ... */
 function extractArticleSection(content: string, articleNum: number): { raw: string; title: string; body: string } | null {
@@ -261,11 +139,11 @@ export async function searchLawArticle(code: string, article: number): Promise<L
     return emptyResult(code, article, 'Geçersiz kanun kodu.')
   }
 
-  const indexPath = path.join(process.cwd(), 'law-data', 'madde-index', file.replace(/\.md$/i, '.json'))
+  const indexPath = path.join(CORE_ARTICLE_INDEX_DIR, file.replace(/\.md$/i, '.json'))
 
   // 1) Try madde-index first (reliable, structured)
   try {
-    const indexRaw = await fs.readFile(indexPath, 'utf-8')
+    const indexRaw = await readFileCachedUtf8(indexPath)
     const indexEntries = JSON.parse(indexRaw) as MaddeIndexEntry[]
     if (Array.isArray(indexEntries)) {
       const entry = indexEntries.find((e) => indexArticleMatches(e, article))
@@ -295,11 +173,11 @@ export async function searchLawArticle(code: string, article: number): Promise<L
   }
 
   // 2) Mevzuat markdown
-  const baseDir = path.join(process.cwd(), 'law-data', 'mevzuat')
+  const baseDir = CORE_LAWS_DIR
   const filePath = path.join(baseDir, file)
   let content: string
   try {
-    content = await fs.readFile(filePath, 'utf-8')
+    content = await readFileCachedUtf8(filePath)
   } catch {
     return emptyResult(code, article, 'Bu kanunda Madde ' + article + ' bilgi tabanında bulunamadı. Resmî metin için Resmî Gazete veya mevzuat portallarını kullanın.')
   }

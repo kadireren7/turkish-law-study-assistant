@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Planlanan / desteklenen yerel hukuk kaynakları — dosya yoksa ingest ile eklenir; metin uydurulmaz.",
+  "version": 1,
+  "coreLaws": [
+    { "id": "anayasa", "file": "anayasa.md", "status": "present" },
+    { "id": "tck", "file": "tck.md", "status": "present" },
+    { "id": "tmk", "file": "tmk.md", "status": "present" },
+    { "id": "tbk", "file": "tbk.md", "status": "present" },
+    { "id": "cmk", "file": "cmk.md", "status": "present" },
+    { "id": "hmk", "file": "hmk.md", "status": "present" },
+    { "id": "iik", "file": "iik.md", "status": "present" },
+    { "id": "ttk", "file": "ttk.md", "status": "present" },
+    { "id": "kabahatler", "file": "kabahatler.md", "status": "present" },
+    { "id": "is-kanunu", "file": "is-kanunu.md", "status": "present" },
+    { "id": "iyuk", "file": "idari-yargilama-usulu.md", "status": "present" },
+    { "id": "idare", "file": "idare.md", "status": "present" },
+    { "id": "kvkk", "file": "kvkk.md", "status": "planned", "note": "Resmî metin ingest sonrası data/core/laws altına eklenir" },
+    { "id": "tuketici", "file": "tuketici-hukuku-notlari.md", "status": "planned", "note": "Özet notlar; kanun metni değildir" },
+    { "id": "tebligat", "file": "tebligat-kanunu.md", "status": "planned" }
+  ],
+  "knowledgeLayers": [
+    "topic summaries → data/core/topics",
+    "article index → data/core/article-index",
+    "decision summaries → data/cases/decision-summaries",
+    "pedagogy → data/pedagogy"
+  ]
+}

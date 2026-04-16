@@ -8,8 +8,8 @@
 
 import { useState, useRef } from 'react'
 import { analyzeCase, type CaseAnalysisResult } from '@/lib/api'
-import { ConfidenceBadge } from '@/components/ConfidenceBadge'
-import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/ExplanationModeSwitcher'
+import { ConfidenceBadge } from '@/components/exam/ConfidenceBadge'
+import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/exam/ExplanationModeSwitcher'
 import { recordCaseAnalysis } from '@/lib/study-engine'
 
 const SECTIONS = [

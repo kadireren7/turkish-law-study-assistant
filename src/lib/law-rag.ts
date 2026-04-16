@@ -13,8 +13,10 @@ import fs from 'fs/promises'
 import OpenAI from 'openai'
 import { toHumanReadableLabel } from '@/lib/source-metadata'
 import { filterChunksBySourceGroups, type SourceGroupId } from '@/lib/source-routing'
-
-const LAW_DATA_DIR = path.join(process.cwd(), 'law-data')
+import { RAG_MARKDOWN_ROOTS, CORE_ARTICLE_INDEX_DIR } from '@/lib/config/data-paths'
+import { readFileCachedUtf8 } from '@/lib/cache/legalFileCache'
+import { normalizeTr, expandLegalTokenVariants } from '@/lib/text/normalizeTr'
+import { fuzzyTokenMatch } from '@/lib/search/fuzzyMatch'
 const TOP_K = 6
 const MIN_HYBRID_SCORE = 0.08
 const MAX_CONTEXT_CHARS = 4200
@@ -38,10 +40,18 @@ export type RagResult = {
 }
 
 let cachedIndex: LawChunk[] | null = null
+let indexBuiltAt = 0
+/** Tam yeniden indeksleme aralığı (dosya önbelleği sayesinde maliyet düşük). */
+const INDEX_TTL_MS = 5 * 60 * 1000
+
+export function invalidateLawRagIndex(): void {
+  cachedIndex = null
+  indexBuiltAt = 0
+}
 
 type MdFile = { relativePath: string; fullPath: string; content: string; updatedAt: number }
 
-export async function findAllMarkdownFiles(dir: string = LAW_DATA_DIR): Promise<MdFile[]> {
+async function findAllMarkdownUnder(dir: string): Promise<MdFile[]> {
   const out: MdFile[] = []
   let entries: { name: string; path: string }[]
   try {
@@ -59,14 +69,24 @@ export async function findAllMarkdownFiles(dir: string = LAW_DATA_DIR): Promise<
     const stat = await fs.stat(fullPath).catch(() => null)
     if (!stat) continue
     if (stat.isDirectory()) {
-      const sub = await findAllMarkdownFiles(fullPath)
+      const sub = await findAllMarkdownUnder(fullPath)
       out.push(...sub)
       continue
     }
     if (e.name.toLowerCase().endsWith('.md')) {
-      const content = await fs.readFile(fullPath, 'utf-8').catch(() => '')
+      const content = await readFileCachedUtf8(fullPath).catch(() => '')
       out.push({ relativePath, fullPath, content, updatedAt: stat.mtimeMs })
     }
+  }
+  return out
+}
+
+/** All markdown chunks from configured RAG roots (canonical `data/` layout). */
+export async function findAllMarkdownFiles(): Promise<MdFile[]> {
+  const out: MdFile[] = []
+  for (const root of RAG_MARKDOWN_ROOTS) {
+    const sub = await findAllMarkdownUnder(root)
+    out.push(...sub)
   }
   return out
 }
@@ -114,7 +134,7 @@ export function chunkByHeadings(content: string, filePath: string): { heading: s
   return chunks
 }
 
-const MADDE_INDEX_DIR = path.join(LAW_DATA_DIR, 'madde-index')
+const MADDE_INDEX_DIR = CORE_ARTICLE_INDEX_DIR
 
 type MaddeIndexEntry = {
   lawCode: string
@@ -137,17 +157,6 @@ function parseFrontmatterDate(content: string): number | null {
   return Number.isFinite(t) ? t : null
 }
 
-function normalizeTr(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/ı/g, 'i')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
-}
-
 function tokenize(text: string): string[] {
   const normalized = normalizeTr(text)
   const parts = normalized.split(/[^a-z0-9]+/g).filter((t) => t.length >= 2)
@@ -162,11 +171,15 @@ const SEMANTIC_LEXICON: Record<string, string[]> = {
   borclar: ['tbk', 'sozlesme', 'temerrut', 'ifa', 'haksiz'],
   medeni: ['tmk', 'miras', 'aile', 'ehliyet', 'mulkiyet'],
   usul: ['cmk', 'hmk', 'sure', 'yetki', 'delil'],
+  mesru: ['mudafaa', 'mudafa', 'savunma', 'meşru'],
+  mudafaa: ['mesru', 'meşru', 'hak', 'sınır'],
 }
 
 function expandQueryTokens(tokens: string[]): Set<string> {
-  const set = new Set(tokens)
+  const set = new Set<string>()
   for (const t of tokens) {
+    set.add(t)
+    expandLegalTokenVariants(t).forEach((x) => set.add(x))
     const extras = SEMANTIC_LEXICON[t]
     if (extras) extras.forEach((e) => set.add(e))
   }
@@ -175,13 +188,22 @@ function expandQueryTokens(tokens: string[]): Set<string> {
 
 function computeKeywordScore(queryTokens: Set<string>, chunkTokens: string[]): number {
   if (chunkTokens.length === 0 || queryTokens.size === 0) return 0
+  const uniqueChunkArr = [...new Set(chunkTokens)]
   let hit = 0
   for (const t of chunkTokens) {
     if (queryTokens.has(t)) hit += 1
   }
-  const uniqueChunk = new Set(chunkTokens).size || 1
+  let fuzzyBonus = 0
+  for (const qt of queryTokens) {
+    if (qt.length < 4) continue
+    if (uniqueChunkArr.some((ct) => ct === qt)) continue
+    if (uniqueChunkArr.some((ct) => ct.length >= 4 && fuzzyTokenMatch(qt, ct, 4, 1))) {
+      fuzzyBonus += 0.22
+    }
+  }
+  const uniqueChunk = uniqueChunkArr.length || 1
   const coverage = hit / uniqueChunk
-  return Math.min(1, coverage * 4)
+  return Math.min(1, coverage * 4 + Math.min(0.35, fuzzyBonus))
 }
 
 function computeRecencyBoost(updatedAt: number, newestTs: number): number {
@@ -209,7 +231,7 @@ async function loadMaddeIndexChunks(): Promise<{ filePath: string; heading: stri
     const updatedAt = stat?.mtimeMs ?? Date.now()
     let raw = ''
     try {
-      raw = await fs.readFile(fullPath, 'utf-8')
+      raw = await readFileCachedUtf8(fullPath)
     } catch {
       continue
     }
@@ -262,7 +284,10 @@ export async function buildChunkList(): Promise<{ filePath: string; heading: str
  * Build or return cached index (tokenized chunks).
  */
 export async function getLawRagIndex(_openai: OpenAI): Promise<LawChunk[]> {
-  if (cachedIndex && cachedIndex.length > 0) return cachedIndex
+  const now = Date.now()
+  if (cachedIndex && cachedIndex.length > 0 && now - indexBuiltAt < INDEX_TTL_MS) {
+    return cachedIndex
+  }
   const list = await buildChunkList()
   cachedIndex = list.map((c, i) => ({
     id: `law-${i}-${path.basename(c.filePath)}`,
@@ -272,6 +297,7 @@ export async function getLawRagIndex(_openai: OpenAI): Promise<LawChunk[]> {
     updatedAt: c.updatedAt,
     tokens: tokenize(`${c.heading}\n${c.text}`).slice(0, 1200),
   }))
+  indexBuiltAt = now
   return cachedIndex
 }
 
@@ -309,10 +335,14 @@ export async function retrieveForQuery(
   }
   function sourceTier(filePath: string): number {
     const normalized = filePath.replace(/\\/g, '/')
-    if (normalized.includes('mevzuat/')) return overrides['mevzuat'] ?? defaultTiers['mevzuat/']!
-    if (normalized.includes('madde-index/')) return overrides['madde-index'] ?? defaultTiers['madde-index/']!
-    if (normalized.includes('konu-notlari/')) return overrides['konu-notlari'] ?? defaultTiers['konu-notlari/']!
-    if (normalized.includes('guncellemeler/')) return overrides['guncellemeler'] ?? defaultTiers['guncellemeler/']!
+    const isLaws = normalized.includes('mevzuat/') || normalized.includes('core/laws/')
+    const isIndex = normalized.includes('madde-index/') || normalized.includes('core/article-index/')
+    const isTopics = normalized.includes('konu-notlari/') || normalized.includes('core/topics/')
+    const isUpdates = normalized.includes('guncellemeler/') || normalized.includes('derived/updates/')
+    if (isLaws) return overrides['mevzuat'] ?? defaultTiers['mevzuat/']!
+    if (isIndex) return overrides['madde-index'] ?? defaultTiers['madde-index/']!
+    if (isTopics) return overrides['konu-notlari'] ?? defaultTiers['konu-notlari/']!
+    if (isUpdates) return overrides['guncellemeler'] ?? defaultTiers['guncellemeler/']!
     return 3
   }
   const scored = index

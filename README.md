@@ -52,15 +52,15 @@ Bu proje **OpenAI modelini fine-tune etmez veya eğitmez.** Hazır API kullanır
 
 Üç parça birlikte kullanılır:
 
-1. **Yerel law-data** — Kanun metinleri (Anayasa, TCK, TMK, TBK, CMK, HMK, İİK, TTK, İdari Yargılama Usulü, İş Kanunu, Kabahatler, İdare), konu notları ve madde açıklamaları `law-data/` altında tutulur. **Mevzuat** (`law-data/mevzuat/`) Markdown; **madde-index** (`law-data/madde-index/`) madde metinleri için JSON indeksi; **konu-notlari** (`law-data/konu-notlari/`) öğrenci odaklı konu notları. Tüm hukuki yanıtlar bu kaynaklardan beslenir.
-2. **Güncelleme pipeline'ı** — Mevzuat ve karar özetleri `scripts/update-legal-data.ts` ile güncellenir. Yerel dosya değişiklikleri tespit edilir; isteğe bağlı olarak Resmî Gazete / mahkeme kaynaklarından alınan özetler `law-data/guncellemeler/` (recent-amendments, recent-important-decisions) içine yazılır. **Güncel hukuk gelişmeleri** bu işlerle takip edilir; sınav için önemli değişiklikler "Güncel Hukuk Gelişmeleri" sayfasında özetlenir.
-3. **OpenAI API** — Sohbet, olay analizi, sınav pratiği vb. özelliklerde model, **law-data'dan çekilen metinler** bağlam olarak verilerek çağrılır. Model kendi "hafızasına" değil, her istekte sağlanan kaynak metinlere dayanır.
+1. **Yerel veri (`data/`)** — Kanun metinleri (Anayasa, TCK, TMK, TBK, CMK, HMK, İİK, TTK, İdari Yargılama Usulü, İş Kanunu, Kabahatler, İdare), konu notları ve madde açıklamaları `data/core/` altında tutulur. **Mevzuat** (`data/core/laws/`) Markdown; **madde indeksi** (`data/core/article-index/`) madde metinleri için JSON indeksi; **konu notları** (`data/core/topics/`) öğrenci odaklı notlar. Tüm hukuki yanıtlar bu kaynaklardan beslenir.
+2. **Güncelleme pipeline'ı** — Mevzuat ve karar özetleri `scripts/transform/update-legal-data.ts` ile güncellenir. Yerel dosya değişiklikleri tespit edilir; isteğe bağlı olarak Resmî Gazete / mahkeme kaynaklarından alınan özetler `data/derived/updates/` (recent-amendments, recent-important-decisions) içine yazılır. **Güncel hukuk gelişmeleri** bu işlerle takip edilir; sınav için önemli değişiklikler "Güncel Hukuk Gelişmeleri" sayfasında özetlenir.
+3. **OpenAI API** — Sohbet, olay analizi, sınav pratiği vb. özelliklerde model, **`data/` altından çekilen metinler** bağlam olarak verilerek çağrılır. Model kendi "hafızasına" değil, her istekte sağlanan kaynak metinlere dayanır.
 
-Özet: **Yerel law-data + güncelleme işleri + OpenAI** birlikte kullanılır; eğitim veya fine-tuning yoktur.
+Özet: **Yerel `data/` + güncelleme işleri + OpenAI** birlikte kullanılır; eğitim veya fine-tuning yoktur.
 
 ### Kaynak kuralları
 
-- **Yapılandırılmış kaynak:** AI yanıtları yalnızca sağlanan law-data metinlerine (ve güncellemeler klasöründeki özetlere) dayanır.
+- **Yapılandırılmış kaynak:** AI yanıtları yalnızca sağlanan yerel `data/` metinlerine (ve güncellemeler klasöründeki özetlere) dayanır.
 - **Retrieval:** İlgili bölümler `law-rag` ile seçilir; öncelik sırası: (1) mevzuat (madde metni), (2) madde-index, (3) konu-notlari, (4) guncellemeler. Her AI çağrısında bu metinler bağlam olarak verilir (`source-grounded`).
 - **Uydurma yok:** Kanun maddesi, karar numarası, tarih veya güncel gelişme uydurulmaz. Kaynakta yoksa "Verilen kaynaklarda yer almıyor" gibi ifade kullanılır.
 - **Ürün amacı:** Hukuk **öğrencisi** için **ders ve sınav hazırlığı** asistanı; hukuki danışmanlık veya genel hukuk platformu değildir.
@@ -71,19 +71,19 @@ Bu proje **OpenAI modelini fine-tune etmez veya eğitmez.** Hazır API kullanır
 
 1. Resmî Gazete ve resmî mevzuat kaynakları  
 2. Resmî mahkeme kararı veritabanları (Yargıtay, AYM vb.)  
-3. Bu kaynaklardan üretilmiş yerel **law-data** dosyaları  
-4. Bu kaynaklardan türetilmiş eğitim amaçlı özetler (konu notları, guncellemeler)
+3. Bu kaynaklardan üretilmiş yerel **`data/`** dosyaları  
+4. Bu kaynaklardan türetilmiş eğitim amaçlı özetler (konu notları, güncellemeler)
 
-Bu politika sohbet, madde arama, olay analizi, sınav pratiği ve güncel gelişmeler dahil **tüm** hukuki içerik üretiminde geçerlidir. Madde Ara doğrudan law-data okur; AI kullanan özelliklerde bağlam yine law-data'dan enjekte edilir.
+Bu politika sohbet, madde arama, olay analizi, sınav pratiği ve güncel gelişmeler dahil **tüm** hukuki içerik üretiminde geçerlidir. Madde Ara doğrudan `data/core` okur; AI kullanan özelliklerde bağlam yine yerel veriden enjekte edilir.
 
 ### Tüm maddeleri resmî kaynaktan doldurma
 
 Kanunların **tamamını** (tüm maddeleri) mevzuat.gov.tr’den almak için:
 
 1. **Mevzuat çekimi:** `npm run mevzuat:fetch` — Anayasa, TCK, TMK, TBK, CMK, HMK, İİK, TTK, Kabahatler metinleri mevzuat.gov.tr’den indirilir.
-2. **Madde indeksi:** `npm run madde-index:sync` — Mevzuat markdown’daki her madde `madde-index/*.json` dosyalarına yazılır; Madde Ara tüm maddeleri bulur.
+2. **Madde indeksi:** `npm run madde-index:sync` — Mevzuat markdown’daki her madde `data/core/article-index/*.json` dosyalarına yazılır; Madde Ara tüm maddeleri bulur.
 
-Ayrıntı: `law-data/README.md`.
+Ayrıntı: `data/README.md`.
 
 ### Web araması (isteğe bağlı)
 
@@ -99,17 +99,17 @@ Biri tanımlıysa, “güncel”, “son karar”, “internet” gibi ifadeler 
 Son mevzuat değişiklikleri ve önemli kararlar **güncelleme işleri** ile takip edilir:
 
 - **Günlük/haftalık scriptler:** `npm run legal:update:daily` (mevzuat), `npm run legal:update:weekly` (karar özetleri) veya tam güncelleme `npm run legal:update`.
-- **Çıktı:** `law-data/guncellemeler/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`. Bu dosyalar "Güncel Hukuk Gelişmeleri" sayfasında ve (uygunsa) sohbet/uyarı metinlerinde kullanılır.
+- **Çıktı:** `data/derived/updates/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`. Bu dosyalar "Güncel Hukuk Gelişmeleri" sayfasında ve (uygunsa) sohbet/uyarı metinlerinde kullanılır.
 - **Resmî kaynak vurgusu:** Özetler Resmî Gazete ve mahkeme veritabanlarına atıf yapar; kesin metin için kullanıcı bu kaynaklara yönlendirilir.
-- **Tam güncelleme (tek komut):** `npm run daily:update` — mevzuat RSS, güncel mevzuat/karar özetleri ve hukuk haberleri sırayla güncellenir. Çıktı: `law-data/guncellemeler/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`, `law-data/haberler/hukuk-haberleri.json`.
+- **Tam güncelleme (tek komut):** `npm run daily:update` — mevzuat RSS, güncel mevzuat/karar özetleri ve hukuk haberleri sırayla güncellenir. Çıktı: `data/derived/updates/recent-amendments.md`, `recent-important-decisions.md`, `update-log.json`, `data/derived/news/hukuk-haberleri.json`.
 - **GitHub Actions:** Yalnızca manuel tetikleme. Repo → Actions → "Legal data update" → Run workflow. Değişiklik varsa otomatik commit/push.
-- **Yerel (Windows):** İsteğe bağlı manuel veya Görev Zamanlayıcı ile `scripts\run-daily-update.bat` çalıştırılabilir; detay için `scripts/GUNLUK-GUNCELLEME-WINDOWS.md`.
+- **Yerel (Windows):** İsteğe bağlı manuel veya Görev Zamanlayıcı ile `scripts\runners\run-daily-update.bat` çalıştırılabilir; detay için `scripts/runners/GUNLUK-GUNCELLEME-WINDOWS.md`.
 
-Detaylar için `law-data/guncellemeler/README.md` ve `src/lib/legal-sources.ts` (kaynak öncelik listesi) kullanılabilir.
+Detaylar için `data/derived/updates/README.md` ve `src/lib/legal-sources.ts` (kaynak öncelik listesi) kullanılabilir.
 
 ### Teknik (kod tarafı)
 
-- Tüm AI route'ları `src/lib/source-grounded.ts` üzerinden ortak kaynak kuralına uyar; `getLawDatabaseContext()` ile law-data bağlamı enjekte edilir.
+- Tüm AI route'ları `src/lib/source-grounded.ts` üzerinden ortak kaynak kuralına uyar; `getLawDatabaseContext()` ile mevzuat bağlamı enjekte edilir.
 - Prompt'lar "KANUN KAYNAK METİNLERİ" ve güncellemeler klasörüne atıf yapar; güncellik uyarıları `src/lib/freshness-warnings.ts` ile eklenebilir.
 
 ### Performans optimizasyonları (hız ve yanıt süresi)
@@ -164,7 +164,7 @@ Tarayıcıda [http://localhost:3000](http://localhost:3000) açın. Production b
    Anahtarı [OpenAI API Keys](https://platform.openai.com/api-keys) sayfasından alabilirsiniz.
 3. **Production’da zorunlu:** Haberler/güncelleme cron endpoint’i (`/api/news-update`) tetiklenmesin diye `CRON_SECRET` tanımlayın. Tanımlı değilse herkes GET/POST ile güncellemeyi tetikleyebilir.
 
-**AI özellikleri isteğe bağlıdır.** `OPENAI_API_KEY` tanımlı değilse Sohbet, Olay Analizi, Sınav Pratiği, Test, Kartlar ve Konu Anlatımı sayfaları API hatası verecektir; **Madde Ara** ise yalnızca `law-data` dosyalarını okuduğu için anahtar olmadan çalışır. Tüm arayüz ve metinler yine Türkçe görünür.
+**AI özellikleri isteğe bağlıdır.** `OPENAI_API_KEY` tanımlı değilse Sohbet, Olay Analizi, Sınav Pratiği, Test, Kartlar ve Konu Anlatımı sayfaları API hatası verecektir; **Madde Ara** ise yalnızca `data/core` dosyalarını okuduğu için anahtar olmadan çalışır. Tüm arayüz ve metinler yine Türkçe görünür.
 
 ### Vercel’e deploy etme
 
@@ -189,27 +189,21 @@ Deploy sonrası AI kullanan sayfalar yalnızca `OPENAI_API_KEY` tanımlıysa ça
 ## Proje yapısı (özet)
 
 ```
-law-data/
-  mevzuat/          # Kanun metinleri (anayasa, tck, tmk, tbk, cmk, hmk, iik, ttk, idari-yargilama-usulu, is-kanunu, kabahatler, idare)
-  madde-index/       # Madde metinleri JSON (anayasa, tck, tmk, tbk, cmk, hmk, iik, ttk, idari-yargilama-usulu, is-kanunu, kabahatler)
-  konu-notlari/      # Öğrenci konu notları (ceza-genel, medeni-giris, borclar-genel, anayasa-genel, usul/cmk/hmk/icra/ticaret/is/idare giriş)
-  guncellemeler/     # recent-amendments, recent-important-decisions
-scripts/            # update-legal-data.ts (güncelleme pipeline)
+data/
+  core/laws/           # Kanun metinleri (markdown)
+  core/article-index/  # Madde JSON indeksleri
+  core/topics/         # Konu notları
+  derived/updates/     # Güncel özetler, update-log, history
+  derived/news/        # Hukuk haberleri (JSON)
+  pedagogy/, imports/, cases/  # Genişletme katmanları
+scripts/
+  ingest/, transform/, jobs/, audit/, runners/
 src/
-  app/
-    page.tsx              # Ana sayfa (kartlar)
-    sohbet/                # Sohbet (RAG + kaynak şeffaflığı + güncellik uyarıları)
-    law-search/           # Madde Ara
-    case-solver/          # Olay Analizi
-    exam-practice/        # Sınav Pratiği
-    guncel-gelismeler/    # Güncel Hukuk Gelişmeleri
-    quiz/                 # Çoktan Seçmeli Test
-    flashcards/           # Bilgi Kartları
-    law-lessons/          # Konu Anlatımı
-    api/                  # chat, law-search, case, exam-practice, quiz, flashcards, lesson
-  components/             # Sidebar, ChatMessage
-  lib/                    # api, law-database, law-rag, law-search, source-grounded, source-metadata,
-                          # freshness-warnings, legal-sources, *-prompt
+  app/                  # Sayfalar + api/ (route grupları: laws, study, exam, analysis, admin)
+  components/           # ui/, chat/, exam/, shared/
+  lib/                  # api, law-database, law-rag, source-grounded, *-prompt, config/data-paths
+  types/                # Ortak tipler
+docs/                   # Mimari ve veri notları
 ```
 
 ---
@@ -217,4 +211,4 @@ src/
 ## Not
 
 - **Hukuki danışmanlık değildir;** yalnızca ders ve sınav çalışması amaçlıdır.
-- Yanıtlar `law-data` ve prompt kurallarına dayanır; uydurma mahkeme kararı veya madde üretilmez.
+- Yanıtlar yerel `data/` içeriği ve prompt kurallarına dayanır; uydurma mahkeme kararı veya madde üretilmez.
