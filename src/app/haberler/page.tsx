@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { getHaberlerPageData } from '@/lib/haberler'
 import type { HaberItem } from '@/lib/haberler'
+import { SitePageSurface } from '@/components/layout/SitePageSurface'
 import { HaberlerAutoUpdate } from './HaberlerAutoUpdate'
+import { HaberlerNewsControls } from './HaberlerNewsControls'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,7 +87,7 @@ function HaberCard({ item }: { item: HaberItem }) {
   )
 
   const cardClass =
-    'group flex flex-col rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden h-full transition-all duration-300 hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600 hover:-translate-y-0.5'
+    'group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/85 bg-white/95 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-500/20 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900/75 dark:hover:border-slate-600'
 
   if (item.link && item.link.trim()) {
     return (
@@ -115,28 +117,29 @@ export default async function HaberlerPage() {
   const data = await getHaberlerPageData()
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
-      {/* Üst bar: portal hissi */}
-      <header className="shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5">
+    <SitePageSurface>
+      <header className="shrink-0 border-b border-teal-500/15 bg-white/80 backdrop-blur-md dark:border-teal-500/10 dark:bg-slate-900/75">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
                 Haberler
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Hukuk haberleri · En yeni önce
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Hukuk haberleri · En yeni önce · RSS ile birkaç saatte bir yenilenebilir
               </p>
             </div>
-            <Link
-              href="/"
-              className="shrink-0 inline-flex items-center text-sm font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
-            >
-              ← Ana sayfa
-            </Link>
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <HaberlerNewsControls />
+              <Link
+                href="/"
+                className="inline-flex shrink-0 items-center justify-center text-sm font-medium text-teal-600 transition-colors hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+              >
+                ← Ana sayfa
+              </Link>
+            </div>
           </div>
-          {/* Tarih / güncelleme bilgisi */}
-          <div className="flex flex-wrap items-center gap-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-200/80 py-3 text-xs text-slate-500 dark:border-slate-800 sm:text-sm dark:text-slate-400">
             <span>
               Bugün: <strong className="text-slate-700 dark:text-slate-300">{data.currentDateFormatted}</strong>
             </span>
@@ -145,7 +148,7 @@ export default async function HaberlerPage() {
             ) : null}
             <HaberlerAutoUpdate lastSuccessfulUpdate={data.lastSuccessfulUpdate} />
             {!data.hasRealUpdate && (
-              <span className="text-amber-600 dark:text-amber-400 font-medium">
+              <span className="font-medium text-amber-600 dark:text-amber-400">
                 Henüz canlı veri güncellemesi yapılmadı
               </span>
             )}
@@ -153,7 +156,7 @@ export default async function HaberlerPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {/* Hukuk Haberleri */}
         <section className="mb-14 sm:mb-16">
           <div className="mb-6">
@@ -166,7 +169,7 @@ export default async function HaberlerPage() {
           </div>
           <SectionLabel isExample={data.hukukMeta.isExampleData} />
           {data.hukukHaberleri.length === 0 ? (
-            <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-600 dark:text-slate-400 text-sm">
+            <div className="rounded-2xl border border-dashed border-slate-300/90 bg-white/80 p-8 text-center text-sm text-slate-600 backdrop-blur-sm dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-400">
               Listelenecek hukuk haberi yok.{' '}
               <code className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">npm run news:update:law</code> ile güncelleyebilirsiniz.
             </div>
@@ -182,13 +185,14 @@ export default async function HaberlerPage() {
         </section>
 
         {/* Veri kaynağı */}
-        <section className="mt-12 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 p-5 text-sm text-slate-700 dark:text-slate-300">
+        <section className="mt-12 rounded-2xl border border-teal-500/15 bg-white/70 p-5 text-sm text-slate-700 backdrop-blur-sm dark:border-teal-500/10 dark:bg-slate-900/60 dark:text-slate-300">
           <p className="font-semibold text-slate-800 dark:text-slate-200">Veri kaynağı</p>
           <p className="mt-1.5">
-            Hukuk haberleri resmî ve hukuki kaynaklara dayanır. Günlük otomatik güncelleme için <code className="bg-slate-200/80 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">npm run daily:update</code> kullanılabilir.
+            Hukuk haberleri RSS ile çekilir; sayfa açılışında veri yaklaşık 45 dakikadan eskiyse arka planda yenilenir. Sunucuda zamanlanmış görev için{' '}
+            <code className="rounded bg-slate-200/80 px-1.5 py-0.5 text-xs dark:bg-slate-700">npm run daily:update</code> kullanılabilir.
           </p>
         </section>
       </main>
-    </div>
+    </SitePageSurface>
   )
 }

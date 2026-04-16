@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { savePracticeQuestion, getSavedQuestionById } from '@/lib/saved-practice-questions'
 import { generateExamQuestion, generateExamQuestions, generateExamScenarioWithSubQuestions, evaluateExamAnswer, generateQuiz, type ExamEvaluation, type ExamGenerateResult } from '@/lib/api'
@@ -15,10 +16,11 @@ import { ExplanationModeSwitcher, type ExplanationMode } from '@/components/exam
 import { recordPractice } from '@/lib/study-engine'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS } from '@/lib/exam-practice-prompt'
 import { MAIN_TOPICS, getSubtopics, buildTopicLabel, QUESTION_STYLES, type MainTopicId } from '@/lib/pratik-topic-config'
+import { PratikSetupWizard, type PracticeMode } from '@/components/pratik/PratikSetupWizard'
 import { printPracticeSet, printQuizSet, slugForFilename, dateSlugForFilename } from '@/lib/export-questions'
 import type { MistakeTag, PracticeDifficulty } from '@/lib/practice-adaptive'
 
-export type PracticeMode = 'klasik' | 'coktan' | 'dogruyanlis'
+export type { PracticeMode }
 
 type QuizQuestion = { question: string; options: string[]; correct: string; explanation: string }
 
@@ -63,6 +65,10 @@ function PratikCozPageInner() {
   const [loadingEvaluate, setLoadingEvaluate] = useState(false)
   const [error, setError] = useState('')
   const [explanationMode, setExplanationMode] = useState<ExplanationMode>('ogrenci')
+  /** Kurulum sihirbazı: tek tek adımlar (1–4). */
+  const [setupStep, setSetupStep] = useState(1)
+  /** Soru üretildikten sonra sihirbazı özet çubuğuna indir. */
+  const [wizardCollapsed, setWizardCollapsed] = useState(false)
 
   const topicLabel = buildTopicLabel(mainTopicId, subtopic)
   const topic =
@@ -329,6 +335,8 @@ function PratikCozPageInner() {
         setLastGenerateSources([])
         if (q.trim()) savePracticeQuestion({ topic: topic.trim(), question: q })
       }
+      setWizardCollapsed(true)
+      setSetupStep(1)
     } catch (err) {
       if (generateRequestIdRef.current !== requestId) return
       setError(err instanceof Error ? err.message : 'Pratik soru oluşturulamadı.')
@@ -356,6 +364,8 @@ function PratikCozPageInner() {
       for (const qq of qs.slice(0, 15)) {
         savePracticeQuestion({ topic: topic.trim(), question: qq.question })
       }
+      setWizardCollapsed(true)
+      setSetupStep(1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Test oluşturulamadı.')
       setQuizQuestions([])
@@ -409,13 +419,30 @@ function PratikCozPageInner() {
     return 'text-red-600 dark:text-red-400'
   }
 
+  const topicOk = topic.trim().length > 0
+  const emitGenerate = () => void handleGenerate({ preventDefault() {} } as React.FormEvent)
+  const emitGenerateQuiz = () => void handleGenerateQuiz({ preventDefault() {} } as React.FormEvent)
+
   return (
-    <div className="flex flex-1 flex-col min-h-0 bg-slate-50/80 dark:bg-slate-900/95 transition-colors">
-      <header className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 sm:px-6 py-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-gradient-to-br from-slate-100 via-white to-teal-50/80 transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-teal-950/40">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(15,118,110,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,118,110,0.07)_1px,transparent_1px)] bg-[size:48px_48px] dark:bg-[linear-gradient(to_right,rgba(45,212,191,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(45,212,191,0.06)_1px,transparent_1px)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-teal-400/20 blur-3xl dark:bg-teal-500/15"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl dark:bg-cyan-400/10"
+      />
+
+      <header className="relative z-[1] shrink-0 border-b border-teal-500/15 bg-white/75 px-4 py-4 shadow-sm backdrop-blur-md dark:border-teal-500/10 dark:bg-slate-900/70 sm:px-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Sınav Pratiği</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
               Çalışma türünü seçin, konuyu belirleyin ve soru oluşturun.
             </p>
           </div>
@@ -431,112 +458,81 @@ function PratikCozPageInner() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="max-w-2xl mx-auto space-y-5">
-          <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Nasıl çalışmak istiyorsunuz?</p>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  { id: 'klasik' as const, label: 'Açık uçlu', icon: '📄' },
-                  { id: 'coktan' as const, label: 'Test (A-B-C-D)', icon: '📝' },
-                  { id: 'dogruyanlis' as const, label: 'Doğru / Yanlış', icon: '✓✗' },
-                ] as const
-              ).map(({ id, label, icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setPracticeMode(id)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    practiceMode === id
-                      ? 'bg-teal-600 dark:bg-teal-500 text-white shadow-sm'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600'
-                  }`}
-                >
-                  {icon} {label}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="relative z-[1] flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <AnimatePresence mode="wait">
+            {!wizardCollapsed && (
+              <motion.div
+                key="wizard"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35 }}
+                className="rounded-3xl border border-teal-500/20 bg-white/80 p-5 shadow-2xl shadow-teal-900/10 backdrop-blur-sm dark:border-teal-500/15 dark:bg-slate-900/75 dark:shadow-black/40 sm:p-8"
+              >
+                <PratikSetupWizard
+                  setupStep={setupStep}
+                  setSetupStep={setSetupStep}
+                  practiceMode={practiceMode}
+                  setPracticeMode={setPracticeMode}
+                  mainTopicId={mainTopicId}
+                  setMainTopicId={setMainTopicId}
+                  subtopic={subtopic}
+                  setSubtopic={setSubtopic}
+                  customTopic={customTopic}
+                  setCustomTopic={setCustomTopic}
+                  useOnlyCustomTopic={useOnlyCustomTopic}
+                  setUseOnlyCustomTopic={setUseOnlyCustomTopic}
+                  questionStyle={questionStyle}
+                  setQuestionStyle={setQuestionStyle}
+                  questionType={questionType}
+                  setQuestionType={setQuestionType}
+                  difficulty={difficulty}
+                  setDifficulty={setDifficulty}
+                  questionCount={questionCount}
+                  setQuestionCount={setQuestionCount}
+                  showAdvanced={showAdvanced}
+                  setShowAdvanced={setShowAdvanced}
+                  topicLabel={topicLabel}
+                  topicOk={topicOk}
+                  isTekOlayCokSoru={isTekOlayCokSoru}
+                  loadingGenerate={loadingGenerate}
+                  loadingQuiz={loadingQuiz}
+                  onGenerateClassic={emitGenerate}
+                  onGenerateQuiz={emitGenerateQuiz}
+                  adaptiveDifficulty={adaptiveDifficulty}
+                  focusMistakes={focusMistakes}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {practiceMode === 'coktan' && (
-            <>
-              <form onSubmit={handleGenerateQuiz} className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm space-y-4">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Konu ve ayarlar</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Ana konu</span>
-                    <select
-                      value={mainTopicId}
-                      onChange={(e) => setMainTopicId(e.target.value as MainTopicId)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingQuiz}
-                    >
-                      {MAIN_TOPICS.map((t) => (
-                        <option key={t.id} value={t.id}>{t.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Alt konu</span>
-                    <select
-                      value={subtopic}
-                      onChange={(e) => setSubtopic(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingQuiz}
-                    >
-                      {subtopics.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block sm:col-span-2">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Ek konu (isteğe bağlı)</span>
-                    <input
-                      type="text"
-                      value={customTopic}
-                      onChange={(e) => setCustomTopic(e.target.value)}
-                      placeholder="Örn: Kast, taksir, teşebbüs"
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-slate-800"
-                      disabled={loadingQuiz}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Zorluk</span>
-                    <select
-                      value={difficulty}
-                      onChange={(e) => setDifficulty(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingQuiz}
-                    >
-                      {DIFFICULTY_LEVELS.map((d) => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Soru sayısı</span>
-                    <select
-                      value={questionCount}
-                      onChange={(e) => setQuestionCount(Number(e.target.value))}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingQuiz}
-                    >
-                      {QUIZ_COUNT_OPTIONS.map((n) => (
-                        <option key={n} value={n}>{n} soru</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  disabled={loadingQuiz || !topic.trim()}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-teal-600 dark:bg-teal-500 text-white font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 transition-all shadow-sm hover:shadow"
-                >
-                  {loadingQuiz ? 'Hazırlanıyor...' : 'Test soruları oluştur'}
-                </button>
-              </form>
-              {quizQuestions.length > 0 && (
+          {wizardCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-500/25 bg-white/70 px-4 py-3 backdrop-blur-sm dark:border-teal-500/20 dark:bg-slate-900/80"
+            >
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-600/90 dark:text-teal-400/90">Pratik ayarları</p>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                  {practiceMode === 'klasik' ? 'Açık uçlu' : practiceMode === 'coktan' ? 'Test' : 'Doğru / Yanlış'} · {topicLabel}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWizardCollapsed(false)
+                  setSetupStep(1)
+                }}
+                className="rounded-xl border border-teal-500/40 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-800 transition hover:bg-teal-500/20 dark:text-teal-100"
+              >
+                Ayarları değiştir
+              </button>
+            </motion.div>
+          )}
+
+          {practiceMode === 'coktan' && quizQuestions.length > 0 && (
                 <>
                   <div className="flex flex-wrap gap-3 items-center">
                     <button
@@ -606,142 +602,7 @@ function PratikCozPageInner() {
                     })}
                   </div>
                 </>
-              )}
-            </>
           )}
-
-          {practiceMode !== 'coktan' && (
-          <>
-          <form onSubmit={handleGenerate} className="p-4 rounded-2xl bg-white/95 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-sm space-y-4">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Konu ve ayarlar</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Adaptif zorluk: <span className="font-medium">{adaptiveDifficulty}</span>
-              {focusMistakes.length > 0 ? ` · Hata odağı: ${focusMistakes.join(', ')}` : ''}
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-              <label className="block">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Ana konu</span>
-                <select
-                  value={mainTopicId}
-                  onChange={(e) => setMainTopicId(e.target.value as MainTopicId)}
-                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  disabled={loadingGenerate}
-                >
-                  {MAIN_TOPICS.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Alt konu</span>
-                <select
-                  value={subtopic}
-                  onChange={(e) => setSubtopic(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  disabled={loadingGenerate}
-                >
-                  {subtopics.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
-              {!isTekOlayCokSoru && practiceMode !== 'dogruyanlis' && (
-                <label className="block">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">Soru sayısı</span>
-                  <select
-                    value={questionCount}
-                    onChange={(e) => setQuestionCount(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    disabled={loadingGenerate}
-                  >
-                    {[1, 2, 3, 5].map((n) => (
-                      <option key={n} value={n}>{n} soru</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <button
-                type="button"
-                className="sm:col-span-2 inline-flex items-center justify-start text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                onClick={() => setShowAdvanced((v) => !v)}
-              >
-                {showAdvanced ? 'Gelişmiş ayarları gizle' : 'Gelişmiş ayarları göster'}
-              </button>
-              {showAdvanced && (
-              <label className="block sm:col-span-2">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Ek konu (isteğe bağlı)</span>
-                <input
-                  type="text"
-                  value={customTopic}
-                  onChange={(e) => setCustomTopic(e.target.value)}
-                  placeholder="Örn: Kast, taksir, teşebbüs"
-                  className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-slate-800"
-                  disabled={loadingGenerate}
-                />
-                <label className="mt-2 flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useOnlyCustomTopic}
-                    onChange={(e) => setUseOnlyCustomTopic(e.target.checked)}
-                    disabled={loadingGenerate}
-                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                  />
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Sadece yukarıdaki ek konuyu kullan</span>
-                </label>
-              </label>
-              )}
-              {showAdvanced && practiceMode !== 'dogruyanlis' && (
-                <>
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Soru tarzı</span>
-                    <select
-                      value={questionStyle}
-                      onChange={(e) => setQuestionStyle(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingGenerate}
-                    >
-                      {QUESTION_STYLES.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">Soru tipi</span>
-                    <select
-                      value={questionType}
-                      onChange={(e) => setQuestionType(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      disabled={loadingGenerate}
-                    >
-                      {QUESTION_TYPES.filter((t) => t.value !== 'coktan' && t.value !== 'dogruyanlis').map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </>
-              )}
-              {showAdvanced && <label className="block">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Zorluk</span>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  disabled={loadingGenerate}
-                >
-                  {DIFFICULTY_LEVELS.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
-              </label>}
-            </div>
-            <button
-              type="submit"
-              disabled={loadingGenerate}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-teal-600 dark:bg-teal-500 text-white font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 transition-all shadow-sm hover:shadow"
-            >
-              {loadingGenerate ? 'Hazırlanıyor...' : (practiceMode === 'dogruyanlis' ? 'Soru oluştur' : questionCount > 1 || isTekOlayCokSoru ? 'Soruları oluştur' : 'Soru oluştur')}
-            </button>
-          </form>
 
           {error && (
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 text-sm animate-fade-in">
@@ -749,6 +610,8 @@ function PratikCozPageInner() {
             </div>
           )}
 
+          {practiceMode !== 'coktan' && (
+          <>
           {(displayQuestion || questions.length > 0 || hasScenarioMode) && (
             <>
               {hasScenarioMode && (
